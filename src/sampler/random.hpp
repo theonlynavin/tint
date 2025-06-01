@@ -29,5 +29,11 @@ namespace Tint
             static std::uniform_real_distribution<float> distr(0, 1);
             return glm::vec3(distr(state.rng), distr(state.rng), distr(state.rng));
         }
+
+        static float UniformInRange(float min, float max, RandomState& state) 
+        {
+            static std::uniform_real_distribution<float> distr(0, 1);
+            return distr(state.rng) * (max - min) + min;
+        }
     };
 } // namespace Tint
