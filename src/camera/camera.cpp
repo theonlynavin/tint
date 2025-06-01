@@ -15,7 +15,7 @@ Tint::Ray Tint::Camera::GenerateRay(float u, float v) const
     glm::vec3 origin = (cameraToWorld * glm::vec4(0,0,0,1)).xyz();
     glm::vec3 direction = glm::normalize((cameraToWorld * glm::vec4(u, v, -1, 0)).xyz());
 
-    float wavelength = Sampler::sampleWavelength();
+    //float wavelength = Sampler::sampleWavelength();
 
     return Ray(origin, direction);
 }
