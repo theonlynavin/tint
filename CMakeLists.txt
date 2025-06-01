@@ -24,7 +24,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
 target_compile_definitions(${PROJECT_NAME} PRIVATE TINT_DEBUG)
 
 target_include_directories(tint PRIVATE include(glm::glm))
-target_include_directories(tint PRIVATE ${CMAKE_BINARY_DIR}/../include/)
+target_include_directories(tint PRIVATE ${CMAKE_BINARY_DIR}/../external/)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(${PROJECT_NAME} PRIVATE
