@@ -8,20 +8,20 @@ bool Tint::Triangle::intersect(const Ray &ray, glm::vec2 &uv, float &t) const
     glm::vec3 ray_cross_e32 = cross(ray.direction, e31);
     float det = dot(e21, ray_cross_e32);
 
-    if (det > -FLT_EPSILON && det < FLT_EPSILON)
+    if (det < FLT_EPSILON)
         return false;
 
     float inv_det = 1.0 / det;
     glm::vec3 s = ray.origin - v1.position;
     float u = inv_det * dot(s, ray_cross_e32);
 
-    if ((u < 0 && abs(u) > FLT_EPSILON) || (u > 1 && abs(u-1) > FLT_EPSILON))
-        return {};
+    if (u < 0 || u > 1)
+        return false;
 
     glm::vec3 s_cross_e21 = cross(s, e21);
     float v = inv_det * dot(ray.direction, s_cross_e21);
 
-    if ((v < 0 && abs(v) > FLT_EPSILON) || (u + v > 1 && abs(u + v - 1) > FLT_EPSILON))
+    if (v < 0 || u + v > 1)
         return false;
 
     t = inv_det * dot(e31, s_cross_e21);

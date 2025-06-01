@@ -8,7 +8,14 @@ set(CXX_STANDARD_REQUIRED TRUE)
 find_package(glm REQUIRED)
 
 # Project specific configuration
-add_executable(tint src/main.cpp)
+add_executable(tint 
+    src/main.cpp
+    src/camera/camera.cpp
+    src/intersection/object.cpp
+    src/intersection/triangle.cpp
+    src/utils/frame.cpp
+    src/utils/image.cpp
+    )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
      ${CMAKE_BINARY_DIR}/../bin/${CMAKE_SYSTEM_NAME}/${CMAKE_BUILD_TYPE}
@@ -17,6 +24,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
 target_compile_definitions(${PROJECT_NAME} PRIVATE TINT_DEBUG)
 
 target_include_directories(tint PRIVATE include(glm::glm))
+target_include_directories(tint PRIVATE ${CMAKE_BINARY_DIR}/../include/)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(${PROJECT_NAME} PRIVATE
