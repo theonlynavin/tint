@@ -1,4 +1,5 @@
 #include "camera.hpp"
+#include <glm/gtx/string_cast.hpp>
 #include "../sampler/random.hpp"
 
 Tint::Camera::Camera(glm::vec2 filmSize, float fieldOfView, float focalLength, float aperture)
@@ -34,8 +35,18 @@ Tint::Ray Tint::Camera::GenerateRay(float u, float v, RandomState& state) const
 
 void Tint::Camera::LookAt(glm::vec3 from, glm::vec3 at)
 {
-    glm::vec3 dir = (at - from);
+    glm::vec3 dir = from - at;
     focalLength = glm::length(dir);
     frame.position = from;
-    frame.rotation = glm::quatLookAt(dir / focalLength, glm::vec3(0, 1, 0));
+
+    glm::vec3 fwd = dir / focalLength;
+    glm::vec3 up = glm::vec3(0, 1, 0);
+
+    if (glm::dot(fwd, up) > 1 - FLT_EPSILON || glm::dot(fwd, up) < -1 + FLT_EPSILON)
+        up = glm::vec3(0, 0, 1);
+
+    glm::vec3 right = glm::normalize(glm::cross(up, fwd));
+    up = glm::cross(fwd, right);
+
+    frame.rotation = glm::quat(glm::mat3(right, up, fwd));
 }
