@@ -13,7 +13,7 @@ namespace Tint
         void Rotate(glm::vec3 eulerAngles);
         void Scale(glm::vec3 scale);
 
-        Frame* parent;  // Frame coordinates are with respect to the parent frame, if NULL then world frame
+        std::shared_ptr<Frame> parent;  // Frame coordinates are with respect to the parent frame, if NULL then world frame
         glm::vec3 position;
         glm::quat rotation;
         glm::vec3 scale;

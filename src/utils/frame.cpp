@@ -1,4 +1,5 @@
 #include "frame.hpp"
+#include <glm/gtx/string_cast.hpp>
 
 Tint::Frame::Frame(glm::vec3 position, glm::quat rotation, glm::vec3 scale)
     : position(position), rotation(rotation), scale(scale)
@@ -26,10 +27,11 @@ void Tint::Frame::Rotate(glm::vec3 eulerAngles)
 
 void Tint::Frame::LockTransform()
 {
-    frameToWorld = glm::identity<glm::mat4>();
-    frameToWorld = glm::scale(frameToWorld, scale);
-    frameToWorld = glm::mat4_cast(rotation) * frameToWorld;
-    frameToWorld = glm::translate(frameToWorld, position);
+    glm::mat4 T = glm::translate(glm::mat4(1), position);
+    glm::mat4 R = glm::mat4_cast(rotation);
+    glm::mat4 S = glm::scale(glm::mat4(1), scale);
+
+    frameToWorld = T * R * S;
 
     if (parent != NULL)
     {
