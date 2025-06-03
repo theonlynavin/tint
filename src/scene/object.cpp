@@ -1,7 +1,7 @@
 #include "object.hpp"
-#include "aabb.hpp"
-#include "OBJ_Loader.h"
-#include "bvh.hpp"
+#include "../intersection/aabb.hpp"
+
+#include <OBJ_Loader.h>
 
 Tint::Object::Object(const std::vector<Vertex> &vertices, const std::vector<uint> &indices)
     : vertices(vertices), indices(indices)
@@ -51,23 +51,21 @@ Tint::AABB Tint::Object::GetBounds()
     return bounds;
 }
 
-bool Tint::Object::Intersect(const Ray &ray, Surface &hit)
+bool Tint::Object::Intersect(Ray &ray, Surface &hit)
 {
     bool hitAnything = false;
-    float minDist = FLT_MAX;
+
+    float tbox = FLT_MAX;
+    if (!bounds.Intersect(ray, tbox))
+        return false;
 
     for (Triangle& tri : triangles)
     {
-        float t = 0;
         glm::vec2 uv;
-        if (tri.intersect(ray, uv, t))
+        if (tri.intersect(ray, uv))
         {
-            if (t < minDist)
-            {
-                hit.hit = tri;
-                hit.uv = uv;
-            }
-
+            hit.hit = tri;
+            hit.uv = uv;
             hitAnything = true;
         }
     }

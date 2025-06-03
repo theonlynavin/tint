@@ -1,5 +1,6 @@
 #include "camera/camera.hpp"
-#include "intersection/object.hpp"
+#include "scene/object.hpp"
+#include "scene/scene.hpp"
 #include "intersection/bvh.hpp"
 #include "sampler/random.hpp"
 #include "utils/frame.hpp"

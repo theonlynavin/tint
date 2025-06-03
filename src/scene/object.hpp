@@ -1,12 +1,14 @@
 #include "../utils/frame.hpp"
-#include "triangle.hpp"
-#include "aabb.hpp"
+#include "../intersection/triangle.hpp"
+#include "../intersection/aabb.hpp"
+#include "../material/material.hpp"
 #include <vector>
 #include <string>
 
 namespace Tint
 {
     struct Ray;
+    class Material;
     
     class Object
     {
@@ -33,9 +35,10 @@ namespace Tint
         /// @brief 
         /// @param ray 
         /// @return 
-        bool Intersect(const Ray& ray, Surface& hit);
+        bool Intersect(Ray& ray, Surface& hit);
 
         Frame frame;
+        std::shared_ptr<Material> material;
     };
 
     std::vector<Object> LoadModel(const std::string& filepath);
