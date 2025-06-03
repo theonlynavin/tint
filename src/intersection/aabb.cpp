@@ -35,6 +35,12 @@ void Tint::AABB::Expand(const glm::vec3 &vertex)
     max = glm::max(max, vertex);
 }
 
+void Tint::AABB::Expand(const AABB &other)
+{
+    min = glm::min(min, other.min);
+    max = glm::max(max, other.max);
+}
+
 /// http://psgraphics.blogspot.com/2016/02/new-simple-ray-box-test-from-andrew.html
 bool Tint::AABB::Intersect(const Ray &ray, float &t) const
 {
@@ -59,9 +65,18 @@ bool Tint::AABB::Intersect(const Ray &ray, float &t) const
             return false;
     }
 
-    t = tmin;
+    if (tmin > ray.tMin && tmin < ray.tMax)
+    {
+        t = tmin;
+        return true;
+    }
+    else if (tmax > ray.tMin && tmax < ray.tMax)
+    {
+        t = tmax;
+        return true;
+    }
 
-    return true;
+    return false;
 }
 
 glm::vec3 Tint::AABB::GetMin() const
@@ -79,6 +94,14 @@ glm::vec3 Tint::AABB::GetCentroid() const
     return 0.5f * (min + max);
 }
 
+Tint::real Tint::AABB::GetArea() const
+{
+    real a = (max.x - min.x);
+    real b = (max.y - min.y);
+    real c = (max.z - min.z);
+    return 2*(a*b + b*c + c*a);
+}
+
 Tint::AABB Tint::AABB::Intersect(const AABB &first, const AABB &second)
 {
     AABB result;
@@ -88,11 +111,31 @@ Tint::AABB Tint::AABB::Intersect(const AABB &first, const AABB &second)
     return result;
 }
 
+Tint::AABB Tint::AABB::Intersect(const std::vector<AABB> &aabbs)
+{
+    AABB result;
+    
+    for (size_t i = 0; i < aabbs.size(); i++)
+        result = Intersect(result, aabbs[i]);
+
+    return result;
+}
+
 Tint::AABB Tint::AABB::Union(const AABB &first, const AABB &second)
 {
     AABB result;
     result.min = glm::min(first.min, second.min);
     result.max = glm::max(first.max, second.max);
+
+    return result;
+}
+
+Tint::AABB Tint::AABB::Union(const std::vector<AABB> &aabbs)
+{
+    AABB result;
+
+    for (size_t i = 0; i < aabbs.size(); i++)
+        result = Union(result, aabbs[i]);
 
     return result;
 }

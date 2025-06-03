@@ -14,6 +14,8 @@ namespace Tint
 
         glm::vec3 origin;
         glm::vec3 direction;
+
+        float tMin = FLT_EPSILON, tMax = FLT_MAX;
         //float wavelength;
 
         inline glm::vec3 at(float t) const { return origin + t * direction; }

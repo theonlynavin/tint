@@ -13,14 +13,14 @@ namespace Tint
         {
             ~BVHNode();
 
-            static BVHNode *CreateBranch(int splitAxis, BVHNode* first, BVHNode* second);
+            static BVHNode *CreateBranch(int splitAxis, BVHNode* first, BVHNode* second, const AABB& bounds);
             static BVHNode *CreateLeaf(int offset, int numTris, const AABB& bounds);
 
             BVHNode* children[2];
             AABB bounds;
             int splitAxis;
             int numTris;
-            int offset;
+            int offset = -1;
         };
 
         struct BVHLeaf
@@ -36,16 +36,18 @@ namespace Tint
         };
         
         
-        BVH(const std::vector<Triangle>& tris, int maxTrisInNode);
+        BVH(const std::vector<Triangle>& tris);
         ~BVH();
 
         BVHNode* root;
 
-        bool Traverse(const Ray& ray, Surface& surf, float& tmin);
+        bool Traverse(Ray& ray, Surface& surf);
 
     private:
         std::vector<Triangle> orderedTriangles;
-        BVHNode* RecursiveBuild(std::vector<BVHLeaf>& leaves, const std::vector<Triangle>& tris, uint first, uint last, uint maxTrisInLeaf);
+        BVHNode* Build(std::vector<BVHLeaf>& leaves, const std::vector<Triangle>& tris, uint first, uint last);
+        inline int PartitionBVHNode(std::vector<BVHLeaf>& leaves, uint first, uint last, int splitAxis, const AABB& centroidBounds);
+        inline bool ComputeSplitAxis(std::vector<BVHLeaf>& leaves, uint first, uint last, int& splitAxis, AABB& centroidBounds) const;
     };
     
 } // namespace Tint

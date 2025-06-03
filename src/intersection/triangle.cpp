@@ -1,7 +1,7 @@
 #include "triangle.hpp"
 #include "../camera/ray.hpp"
 
-bool Tint::Triangle::intersect(const Ray &ray, glm::vec2 &uv, float &t) const
+bool Tint::Triangle::intersect(Ray &ray, glm::vec2 &uv) const
 {
     glm::vec3 e21 = v2.position - v1.position;
     glm::vec3 e31 = v3.position - v1.position;
@@ -24,10 +24,11 @@ bool Tint::Triangle::intersect(const Ray &ray, glm::vec2 &uv, float &t) const
     if (v < 0 || u + v > 1)
         return false;
 
-    t = inv_det * dot(e31, qvec);
+    float t = inv_det * dot(e31, qvec);
 
-    if (t > FLT_EPSILON)
+    if (t > ray.tMin && t < ray.tMax)
     {
+        ray.tMax = t;
         uv.x = u;
         uv.y = v;
         return true;
