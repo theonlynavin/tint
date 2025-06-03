@@ -13,8 +13,9 @@ add_executable(tint
     src/camera/camera.cpp
     src/intersection/aabb.cpp
     src/intersection/bvh.cpp
-    src/intersection/object.cpp
     src/intersection/triangle.cpp
+    src/material/material.cpp
+    src/scene/object.cpp
     src/utils/frame.cpp
     src/utils/image.cpp
     )
