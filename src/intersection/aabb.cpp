@@ -61,7 +61,7 @@ bool Tint::AABB::Intersect(const Ray &ray, float &t) const
         tmin = t0 > tmin ? t0 : tmin;
         tmax = t1 < tmax ? t1 : tmax;
 
-        if (tmax <= tmin)
+        if (tmax < tmin)
             return false;
     }
 
