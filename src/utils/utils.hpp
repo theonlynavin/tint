@@ -1,5 +1,7 @@
 #pragma once
 
+#include <CL/opencl.hpp>
+
 #include <iostream>
 #include <string>
 #include <vector>

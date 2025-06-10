@@ -8,7 +8,7 @@ bool Tint::Triangle::intersect(Ray &ray, glm::vec2 &uv) const
     glm::vec3 pvec = cross(ray.direction, e31);
     float det = dot(e21, pvec);
 
-    if (det < FLT_EPSILON && det > -FLT_EPSILON)
+    if (det < FLT_EPSILON)
         return false;
 
     float inv_det = 1.0 / det;

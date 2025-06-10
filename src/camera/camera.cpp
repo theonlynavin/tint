@@ -50,3 +50,25 @@ void Tint::Camera::LookAt(glm::vec3 from, glm::vec3 at)
 
     frame.rotation = glm::quat(glm::mat3(right, up, fwd));
 }
+
+Tint::cl_Camera Tint::Camera::ToCLCamera() const
+{
+    cl_Camera cam;
+    
+    glm::mat4 cameraToWorld = frame.GetFrameToWorld();
+    glm::vec3 right = (cameraToWorld * glm::vec4(1, 0, 0, 0)).xyz();
+    glm::vec3 up = (cameraToWorld * glm::vec4(0, 1, 0, 0)).xyz();
+    glm::vec3 fwd = (cameraToWorld * glm::vec4(0, 0, 1, 0)).xyz();
+    glm::vec3 origin = (cameraToWorld * glm::vec4(0, 0, 0, 1)).xyz();
+    cam.fwd = cl_float3{fwd.x, fwd.y, fwd.z};
+    cam.up = cl_float3{up.x, up.y, up.z};
+    cam.right = cl_float3{right.x, right.y, right.z};
+    cam.origin = cl_float3{origin.x, origin.y, origin.z};
+
+    cam.aperture = aperture;
+    cam.focal_length = focalLength;
+    cam.scale = tan(fieldOfView / 2);
+    cam.aspect = filmSize.y / filmSize.x;
+
+    return cam;
+}

@@ -11,7 +11,7 @@ namespace Tint
         Image(size_t width, size_t height);
         Image(Image& other);
         ~Image();
-
+        
         void SetPixel(size_t x, size_t y, glm::vec3 color);
         glm::vec3 GetPixel(size_t x, size_t y) const;
     

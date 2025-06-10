@@ -1,3 +1,4 @@
+#pragma once
 #include "../utils/frame.hpp"
 #include "../intersection/triangle.hpp"
 #include "../intersection/aabb.hpp"
@@ -15,8 +16,8 @@ namespace Tint
     private:
         std::vector<Triangle> triangles;
         AABB bounds;
-        const std::vector<Vertex> vertices;
-        const std::vector<uint> indices;
+        std::vector<Vertex> vertices;
+        std::vector<uint> indices;
     public:
     
         std::string name;
@@ -38,7 +39,7 @@ namespace Tint
         bool Intersect(Ray& ray, Surface& hit);
 
         Frame frame;
-        std::shared_ptr<Material> material;
+        //std::shared_ptr<Material> material;
     };
 
     std::vector<Object> LoadModel(const std::string& filepath);

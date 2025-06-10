@@ -1,6 +1,7 @@
 #include "bvh.hpp"
 #include "aabb.hpp"
 #include <algorithm>
+#include <stack>
 
 #define TINT_SAH_SPLITTING
 //#define TINT_MID_SPLITTING
@@ -16,15 +17,102 @@ Tint::BVH::BVH(const std::vector<Triangle> &tris)
         bvhLeaves.push_back(BVHLeaf(i, AABB({tris[i]})));
     }
 
-    root = Build(bvhLeaves, tris, 0, tris.size());
+    root = Build(bvhLeaves, tris, 0, tris.size(), 0);
 }
 
 Tint::BVH::~BVH()
 {
+    if (root != nullptr)
     delete root;
 }
 
-bool Tint::BVH::Traverse(Ray &ray, Surface &surf)
+
+int Tint::BVH::FlattenBVH(BVHNode *root, std::vector<cl_BVHNode> &nodes) const
+{
+    int offset = nodes.size();
+    nodes.push_back(cl_BVHNode());
+
+    cl_BVHNode& node = nodes[offset];
+    glm::vec3 aabb_max = root->bounds.GetMax();
+    glm::vec3 aabb_min = root->bounds.GetMin();
+    node.aabb_max = cl_float3{aabb_max.x, aabb_max.y, aabb_max.z};
+    node.aabb_min = cl_float3{aabb_min.x, aabb_min.y, aabb_min.z};
+    
+    if (root->numTris > 0)
+    {
+        node.is_leaf = true;
+        node.tri_offset = root->offset;
+        node.tri_count = root->numTris;
+    }
+    else
+    {
+        node.is_leaf = false;
+        node.first_child = FlattenBVH(root->children[0], nodes);
+        node.second_child = FlattenBVH(root->children[1], nodes);
+    }
+
+    return offset;
+}
+
+std::vector<Tint::cl_BVHNode> Tint::BVH::ToCLBVH() const
+{
+    struct StackEntry {
+        BVHNode* node;
+        int parentIndex;
+        bool isFirst;
+    };
+
+    std::vector<cl_BVHNode> out;
+    std::stack<StackEntry> stack;
+
+    stack.push({ root, -1, false });
+
+    while (!stack.empty()) {
+        auto entry = stack.top(); stack.pop();
+        
+        BVHNode* node = entry.node;
+        if (!node) continue;
+
+        int index = out.size();
+        out.push_back(cl_BVHNode{});
+        cl_BVHNode& linear = out[index];
+        glm::vec3 aabb_max = root->bounds.GetMax();
+        glm::vec3 aabb_min = root->bounds.GetMin();
+        linear.aabb_max = cl_float3{aabb_max.x, aabb_max.y, aabb_max.z};
+        linear.aabb_min = cl_float3{aabb_min.x, aabb_min.y, aabb_min.z};
+        
+        if (entry.parentIndex != -1) {
+            if (entry.isFirst)
+                out[entry.parentIndex].first_child = index;
+            else
+                out[entry.parentIndex].second_child = index;
+        }
+
+        if (node->numTris > 0) {
+            linear.is_leaf = true;
+            linear.tri_offset = node->offset;
+            linear.tri_count = node->numTris;
+        } else {
+            linear.is_leaf = false;
+            stack.push({ node->children[1], index, false });
+            stack.push({ node->children[0],  index, true  });
+        }
+    }
+
+    return out;
+}
+
+Tint::BVHNode *Tint::BVH::GetRoot() const
+{
+    return root;
+}
+
+std::vector<Tint::Triangle> Tint::BVH::GetTriangles() const
+{
+    return orderedTriangles;
+}
+
+bool Tint::BVH::Traverse(Ray &ray, Surface &surf) const
 {
     BVHNode *currentNode = root;
 
@@ -45,7 +133,7 @@ bool Tint::BVH::Traverse(Ray &ray, Surface &surf)
             {
                 for (size_t i = currentNode->offset; i < currentNode->offset + currentNode->numTris; i++)
                 {
-                    Triangle &tri = orderedTriangles[i];
+                    const Triangle &tri = orderedTriangles[i];
                     glm::vec2 uv;
                     if (tri.intersect(ray, uv))
                     {
@@ -122,7 +210,7 @@ bool Tint::BVH::Traverse(Ray &ray, Surface &surf)
     }
 }
 
-Tint::BVH::BVHNode *Tint::BVH::Build(std::vector<BVHLeaf> &leaves, const std::vector<Triangle> &tris, uint first, uint last)
+Tint::BVHNode *Tint::BVH::Build(std::vector<BVHLeaf> &leaves, const std::vector<Triangle> &tris, uint first, uint last, int depth)
 {
     AABB bounds;
     for (size_t i = first; i < last; i++)
@@ -130,7 +218,7 @@ Tint::BVH::BVHNode *Tint::BVH::Build(std::vector<BVHLeaf> &leaves, const std::ve
 
     uint numTris = last - first;
 
-    if (numTris == 1)
+    if (numTris <= 32 || depth == 8)
     {
         int offset = orderedTriangles.size();
         for (size_t i = first; i < last; i++)
@@ -158,8 +246,8 @@ Tint::BVH::BVHNode *Tint::BVH::Build(std::vector<BVHLeaf> &leaves, const std::ve
 
             if (mid != -1)
                 return BVHNode::CreateBranch(splitAxis,
-                                         Build(leaves, tris, first, mid),
-                                         Build(leaves, tris, mid, last),
+                                         Build(leaves, tris, first, mid, depth+1),
+                                         Build(leaves, tris, mid, last, depth+1),
                                          bounds);
             else
             {
@@ -178,7 +266,7 @@ Tint::BVH::BVHNode *Tint::BVH::Build(std::vector<BVHLeaf> &leaves, const std::ve
 
 int Tint::BVH::PartitionBVHNode(std::vector<BVHLeaf> &leaves, uint first, uint last, int splitAxis, const AABB &centroidBounds)
 {
-    constexpr int maxTrisInLeaf = 4;
+    constexpr int maxTrisInLeaf = 32;
 #ifdef TINT_MID_SPLITTING
     int mid = (first + last) / 2;
     std::nth_element(&leaves[first], &leaves[mid], &leaves[last - 1] + 1,
@@ -297,7 +385,7 @@ bool Tint::BVH::ComputeSplitAxis(std::vector<BVHLeaf> &leaves, uint first, uint 
     return (size != vec3(0, 0, 0));
 }
 
-Tint::BVH::BVHNode::~BVHNode()
+Tint::BVHNode::~BVHNode()
 {
     if (children[0] != nullptr)
         delete children[0];
@@ -305,7 +393,7 @@ Tint::BVH::BVHNode::~BVHNode()
         delete children[1];
 }
 
-Tint::BVH::BVHNode *Tint::BVH::BVHNode::CreateBranch(int splitAxis, BVHNode *first, BVHNode *second, const AABB &bounds)
+Tint::BVHNode *Tint::BVHNode::CreateBranch(int splitAxis, BVHNode *first, BVHNode *second, const AABB &bounds)
 {
     BVHNode *node = new BVHNode;
     node->bounds = bounds;
@@ -316,7 +404,7 @@ Tint::BVH::BVHNode *Tint::BVH::BVHNode::CreateBranch(int splitAxis, BVHNode *fir
     return node;
 }
 
-Tint::BVH::BVHNode *Tint::BVH::BVHNode::CreateLeaf(int offset, int numTris, const AABB &bounds)
+Tint::BVHNode *Tint::BVHNode::CreateLeaf(int offset, int numTris, const AABB &bounds)
 {
     BVHNode *node = new BVHNode;
     node->bounds = bounds;
