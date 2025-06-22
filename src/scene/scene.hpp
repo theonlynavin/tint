@@ -18,7 +18,7 @@ namespace Tint
         void AddObject(const Object& object);
         void AddObjects(const std::vector<Object>& object);
         void BuildBVH();
-        std::pair<std::vector<cl_BVHNode>, std::vector<cl_Triangle>> BuildLBVH();
+        std::pair<std::vector<gl_BVHNode>, std::vector<Triangle>> BuildLBVH();
         bool ClosestIntersection(Ray& ray, Surface& surface);
     };
 } // namespace Tint

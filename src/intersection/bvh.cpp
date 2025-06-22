@@ -27,16 +27,14 @@ Tint::BVH::~BVH()
 }
 
 
-int Tint::BVH::FlattenBVH(BVHNode *root, std::vector<cl_BVHNode> &nodes) const
+int Tint::BVH::FlattenBVH(BVHNode *root, std::vector<gl_BVHNode> &nodes) const
 {
     int offset = nodes.size();
-    nodes.push_back(cl_BVHNode());
+    nodes.push_back(gl_BVHNode());
 
-    cl_BVHNode& node = nodes[offset];
-    glm::vec3 aabb_max = root->bounds.GetMax();
-    glm::vec3 aabb_min = root->bounds.GetMin();
-    node.aabb_max = cl_float3{aabb_max.x, aabb_max.y, aabb_max.z};
-    node.aabb_min = cl_float3{aabb_min.x, aabb_min.y, aabb_min.z};
+    gl_BVHNode& node = nodes[offset];
+    node.aabb_max = root->bounds.GetMax();
+    node.aabb_min = root->bounds.GetMin();
     
     if (root->numTris > 0)
     {
@@ -54,7 +52,7 @@ int Tint::BVH::FlattenBVH(BVHNode *root, std::vector<cl_BVHNode> &nodes) const
     return offset;
 }
 
-std::vector<Tint::cl_BVHNode> Tint::BVH::ToCLBVH() const
+std::vector<Tint::gl_BVHNode> Tint::BVH::ToGLBVH() const
 {
     struct StackEntry {
         BVHNode* node;
@@ -62,7 +60,7 @@ std::vector<Tint::cl_BVHNode> Tint::BVH::ToCLBVH() const
         bool isFirst;
     };
 
-    std::vector<cl_BVHNode> out;
+    std::vector<gl_BVHNode> out;
     std::stack<StackEntry> stack;
 
     stack.push({ root, -1, false });
@@ -74,12 +72,10 @@ std::vector<Tint::cl_BVHNode> Tint::BVH::ToCLBVH() const
         if (!node) continue;
 
         int index = out.size();
-        out.push_back(cl_BVHNode{});
-        cl_BVHNode& linear = out[index];
-        glm::vec3 aabb_max = root->bounds.GetMax();
-        glm::vec3 aabb_min = root->bounds.GetMin();
-        linear.aabb_max = cl_float3{aabb_max.x, aabb_max.y, aabb_max.z};
-        linear.aabb_min = cl_float3{aabb_min.x, aabb_min.y, aabb_min.z};
+        out.push_back(gl_BVHNode{});
+        gl_BVHNode& linear = out[index];
+        linear.aabb_max = node->bounds.GetMax();
+        linear.aabb_min = node->bounds.GetMin();
         
         if (entry.parentIndex != -1) {
             if (entry.isFirst)
@@ -218,7 +214,7 @@ Tint::BVHNode *Tint::BVH::Build(std::vector<BVHLeaf> &leaves, const std::vector<
 
     uint numTris = last - first;
 
-    if (numTris <= 32 || depth == 8)
+    if (numTris <= 4 || depth >= 16)
     {
         int offset = orderedTriangles.size();
         for (size_t i = first; i < last; i++)
@@ -266,7 +262,7 @@ Tint::BVHNode *Tint::BVH::Build(std::vector<BVHLeaf> &leaves, const std::vector<
 
 int Tint::BVH::PartitionBVHNode(std::vector<BVHLeaf> &leaves, uint first, uint last, int splitAxis, const AABB &centroidBounds)
 {
-    constexpr int maxTrisInLeaf = 32;
+    constexpr int maxTrisInLeaf = 4;
 #ifdef TINT_MID_SPLITTING
     int mid = (first + last) / 2;
     std::nth_element(&leaves[first], &leaves[mid], &leaves[last - 1] + 1,

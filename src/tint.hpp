@@ -5,3 +5,5 @@
 #include "sampler/random.hpp"
 #include "utils/frame.hpp"
 #include "utils/image.hpp"
+#include "utils/shader.hpp"
+#include "utils/buffer.hpp"

@@ -20,13 +20,6 @@ namespace Tint
         real area() const;
     };
 
-    struct cl_Triangle
-    {
-        cl_float3 v0, v1, v2;
-        cl_float3 n0, n1, n2;
-        //int material_id;
-    };
-
     struct Surface
     {
         Triangle hit;

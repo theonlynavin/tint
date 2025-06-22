@@ -6,7 +6,9 @@ set(CXX_STANDARD_REQUIRED TRUE)
 
 # Required 3rd Party Libraries 
 find_package(glm REQUIRED)
-find_package(OpenCL REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(glfw3 3.3 REQUIRED)
+find_package(OpenGL REQUIRED)
 
 # Project specific configuration
 add_executable(tint 
@@ -14,26 +16,32 @@ add_executable(tint
     src/camera/camera.cpp
     src/intersection/aabb.cpp
     src/intersection/bvh.cpp
-    src/intersection/lbvh.cpp
     src/intersection/triangle.cpp
     src/material/material.cpp
     src/scene/object.cpp
     src/scene/scene.cpp
     src/utils/frame.cpp
     src/utils/image.cpp
+    src/utils/buffer.cpp
+    src/utils/shader.cpp
+    src/utils/utils.cpp
     )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
      ${CMAKE_BINARY_DIR}/../bin/${CMAKE_SYSTEM_NAME}/${CMAKE_BUILD_TYPE}
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE TINT_DEBUG)
+target_compile_definitions(${PROJECT_NAME} PRIVATE TINT_DEBUG GLEW_STATIC)
 
 target_include_directories(tint PRIVATE include(glm::glm))
-target_include_directories(tint PRIVATE include(OpenCL::OpenCL))
+target_include_directories(tint PRIVATE GLFW_INCLUDE_DIRS)
+target_include_directories(tint PRIVATE GLEW_INCLUDE_DIRS)
 target_include_directories(tint PRIVATE ${CMAKE_BINARY_DIR}/../external/)
 
-target_link_libraries(tint PRIVATE OpenCL::OpenCL)
+target_link_libraries(tint PRIVATE glfw)
+target_link_libraries(tint PRIVATE GLEW::GLEW)
+target_link_libraries(tint PRIVATE OpenGL::GL)
+target_link_libraries(tint PRIVATE OpenGL::OpenGL)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(${PROJECT_NAME} PRIVATE

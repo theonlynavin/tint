@@ -7,10 +7,10 @@ namespace Tint
 {
     struct RandomState;
 
-    struct cl_Camera
+    struct gl_Camera
     {
-        cl_float3 fwd, up, right;
-        cl_float3 origin;
+        glm::vec3 fwd, up, right;
+        glm::vec3 position;
         float focal_length;
         float aperture;
         float aspect;
@@ -35,7 +35,7 @@ namespace Tint
         /// @param at The camera looks towards here
         void LookAt(glm::vec3 from, glm::vec3 at);
 
-        cl_Camera ToCLCamera() const;
+        gl_Camera ToGLCamera() const;
         
         float aperture;
         float focalLength;

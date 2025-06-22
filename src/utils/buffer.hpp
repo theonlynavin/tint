@@ -1,0 +1,33 @@
+#pragma once
+#include "utils.hpp"
+
+namespace Tint
+{
+    class Buffer
+    {
+    private:
+        unsigned int bufferID;
+        unsigned int bufferType;
+        size_t bufferSize;
+        
+    public:
+        enum BufferType
+        {
+            UBO = GL_UNIFORM_BUFFER,          // GL_UNIFORM_BUFFER
+            SSBO = GL_SHADER_STORAGE_BUFFER   // GL_SHADER_STORAGE_BUFFER
+        };
+        
+        Buffer();
+        ~Buffer();
+        
+        void Allocate(size_t size, BufferType type);
+        void Store(const void* data, size_t size, size_t offset = 0);
+
+        void Bind() const;
+        void BindBase(unsigned int bindingPoint) const;
+        void Unbind() const;
+
+        void* Map();
+        void Unmap();
+    };    
+} // namespace Tint

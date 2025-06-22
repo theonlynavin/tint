@@ -7,10 +7,10 @@ namespace Tint
 {
     struct Surface;
 
-    struct cl_BVHNode
+    struct gl_BVHNode
     {   
-        cl_float3 aabb_min;
-        cl_float3 aabb_max;
+        glm::vec3 aabb_min;
+        glm::vec3 aabb_max;
     
         int first_child;
         int second_child;
@@ -55,7 +55,7 @@ namespace Tint
         BVH(const std::vector<Triangle>& tris);
         ~BVH();
 
-        std::vector<cl_BVHNode> ToCLBVH() const;
+        std::vector<gl_BVHNode> ToGLBVH() const;
         BVHNode* GetRoot() const;
         std::vector<Triangle> GetTriangles() const;
         bool Traverse(Ray& ray, Surface& surf) const;
@@ -63,7 +63,7 @@ namespace Tint
     private:
         BVHNode* root;
         std::vector<Triangle> orderedTriangles;
-        int FlattenBVH(BVHNode* root, std::vector<cl_BVHNode>& nodes) const;
+        int FlattenBVH(BVHNode* root, std::vector<gl_BVHNode>& nodes) const;
         BVHNode* Build(std::vector<BVHLeaf>& leaves, const std::vector<Triangle>& tris, uint first, uint last, int depth);
         inline int PartitionBVHNode(std::vector<BVHLeaf>& leaves, uint first, uint last, int splitAxis, const AABB& centroidBounds);
         inline bool ComputeSplitAxis(std::vector<BVHLeaf>& leaves, uint first, uint last, int& splitAxis, AABB& centroidBounds) const;
