@@ -1,11 +1,14 @@
+#ifndef TINT_DATA
+#define TINT_DATA
+
 layout(binding = 2) uniform samplerBuffer bvhNodesTex;
 layout(binding = 3) uniform samplerBuffer trianglesTex;
 
 struct BVHNode {
     vec4 bounds_min;  // .w contains node type (0=interior, 1=leaf)
     vec4 bounds_max;  // .w unused
-    ivec2 children_or_tris; // For interior: (child_first, child_second)
-                            // For leaf: (tri_offset, tri_count)
+    ivec2 data;       // For interior: (child_first, child_second)
+                      // For leaf: (tri_offset, tri_count)
 };
 
 struct Triangle {
@@ -18,7 +21,7 @@ struct Triangle {
     int material_id;
 };
 
-BVHNode fetchBVHNode(int index) {
+BVHNode fetch_bvh_node(int index) {
     BVHNode node;
     node.bounds_min = texelFetch(bvhNodesTex, index * 3 + 0);
     node.bounds_max = texelFetch(bvhNodesTex, index * 3 + 1);
@@ -27,7 +30,7 @@ BVHNode fetchBVHNode(int index) {
     return node;
 }
 
-Triangle fetchTriangle(int index) {
+Triangle fetch_triangle(int index) {
     Triangle tri;
     vec4 v0 = texelFetch(trianglesTex, index * 5 + 0);
     vec4 v1 = texelFetch(trianglesTex, index * 5 + 1);
@@ -43,3 +46,5 @@ Triangle fetchTriangle(int index) {
     tri.material_id = int(n2.w);
     return tri;
 }
+
+#endif

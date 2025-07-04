@@ -1,3 +1,6 @@
+#ifndef TINT_TRIANGLE
+#define TINT_TRIANGLE
+
 struct Surface {
     int tri_index;
     vec3 normal;
@@ -5,6 +8,7 @@ struct Surface {
     float distance;
 };
 
+// The Classic Möller–Trumbore intersection algorithm: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm#
 bool intersect_triangle(Ray ray, vec3 v0, vec3 v1, vec3 v2, out float t, out float u, out float v) {
     const float EPSILON = 0.0000001;
     vec3 edge1 = v1 - v0;
@@ -31,3 +35,5 @@ bool intersect_triangle(Ray ray, vec3 v0, vec3 v1, vec3 v2, out float t, out flo
     t = f * dot(edge2, q);
     return t > EPSILON;
 }
+
+#endif
