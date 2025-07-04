@@ -3,6 +3,8 @@
 
 namespace Tint
 {
+    class Texture;
+    
     class Buffer
     {
     private:
@@ -14,7 +16,8 @@ namespace Tint
         enum BufferType
         {
             UBO = GL_UNIFORM_BUFFER,          // GL_UNIFORM_BUFFER
-            SSBO = GL_SHADER_STORAGE_BUFFER   // GL_SHADER_STORAGE_BUFFER
+            SSBO = GL_SHADER_STORAGE_BUFFER,  // GL_SHADER_STORAGE_BUFFER
+            TBO = GL_TEXTURE_BUFFER           // GL_TEXTURE_BUFFER
         };
         
         Buffer();
@@ -25,7 +28,10 @@ namespace Tint
 
         void Bind() const;
         void BindBase(unsigned int bindingPoint) const;
+        void Attach(const Texture& texture) const;
         void Unbind() const;
+
+        uint GetID() const;
 
         void* Map();
         void Unmap();

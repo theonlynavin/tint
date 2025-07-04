@@ -1,10 +1,11 @@
 #include "buffer.hpp"
+#include "image.hpp"
 #include <GL/glew.h>
 
 Tint::Buffer::Buffer()
     : bufferID(0), bufferType(0), bufferSize(0)
 {
-    glGenBuffers(1, &bufferID);
+    GL_CALL(glGenBuffers(1, &bufferID));
     if (bufferID == 0)
     {
         TRaiseError("Failed to generate buffer!", "Buffer");
@@ -15,8 +16,13 @@ Tint::Buffer::~Buffer()
 {
     if (bufferID != 0)
     {
-        glDeleteBuffers(1, &bufferID);
+        GL_CALL(glDeleteBuffers(1, &bufferID));
     }
+}
+
+uint Tint::Buffer::GetID() const
+{
+    return bufferID;
 }
 
 void Tint::Buffer::Allocate(size_t size, BufferType type)
@@ -29,9 +35,9 @@ void Tint::Buffer::Allocate(size_t size, BufferType type)
     bufferType = type;
     bufferSize = size;
 
-    glBindBuffer(bufferType, bufferID);
-    glBufferData(bufferType, size, nullptr, GL_STATIC_DRAW);
-    glBindBuffer(bufferType, 0);
+    GL_CALL(glBindBuffer(bufferType, bufferID));
+    GL_CALL(glBufferData(bufferType, size, nullptr, GL_STATIC_DRAW));
+    GL_CALL(glBindBuffer(bufferType, 0));
 }
 
 void Tint::Buffer::Store(const void *data, size_t size, size_t offset)
@@ -45,9 +51,9 @@ void Tint::Buffer::Store(const void *data, size_t size, size_t offset)
         TRaiseError("Buffer store operation out of range!", "Buffer::Store");
     }
 
-    glBindBuffer(bufferType, bufferID);
-    glBufferSubData(bufferType, offset, size, data);
-    glBindBuffer(bufferType, 0);
+    GL_CALL(glBindBuffer(bufferType, bufferID));
+    GL_CALL(glBufferSubData(bufferType, offset, size, data));
+    GL_CALL(glBindBuffer(bufferType, 0));
 }
 
 void Tint::Buffer::Bind() const
@@ -56,7 +62,7 @@ void Tint::Buffer::Bind() const
     {
         TRaiseWarning("Buffer not initialized!", "Buffer::Bind");
     }
-    glBindBuffer(bufferType, bufferID);
+    GL_CALL(glBindBuffer(bufferType, bufferID));
 }
 
 void Tint::Buffer::BindBase(unsigned int bindingPoint) const
@@ -65,12 +71,21 @@ void Tint::Buffer::BindBase(unsigned int bindingPoint) const
     {
         TRaiseWarning("Buffer not initialized!", "Buffer::BindBase");
     }
-    glBindBufferBase(bufferType, bindingPoint, bufferID);
+    GL_CALL(glBindBufferBase(bufferType, bindingPoint, bufferID));
+}
+
+void Tint::Buffer::Attach(const Tint::Texture& texture) const
+{
+    Bind();
+    texture.Bind();
+    GL_CALL(glTexBuffer(bufferType, static_cast<int>(texture.GetFormat()), bufferID));
+    texture.Unbind();
+    Unbind();
 }
 
 void Tint::Buffer::Unbind() const
 {
-    glBindBuffer(bufferType, 0);
+    GL_CALL(glBindBuffer(bufferType, 0));
 }
 
 void *Tint::Buffer::Map()
@@ -80,7 +95,7 @@ void *Tint::Buffer::Map()
         TRaiseError("Buffer not initialized!", "Buffer::Map");
     }
     Bind();
-    void *ptr = glMapBuffer(bufferType, GL_READ_WRITE);
+    void *ptr = glMapBuffer(bufferType, GL_READ_WRITE); GL_CALL();
     if (ptr == nullptr)
     {
         TRaiseError("Failed to map buffer!", "Buffer::Map");

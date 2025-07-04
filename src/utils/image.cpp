@@ -233,11 +233,10 @@ Tint::Image Tint::Image::ReadFrom(const std::string &filepath)
     return img;
 }
 
-
-Tint::Texture::Texture() 
-    : textureID(0), width(0), height(0)
+Tint::Texture::Texture(const Texture::Kind &kind, const Image::Format &format)
+    : textureID(0), width(0), height(0), kind(kind), format(format)
 {
-    GL_CALL( glGenTextures(1, &textureID));
+    GL_CALL(glGenTextures(1, &textureID));
 }
 
 Tint::Texture::~Texture()
@@ -313,7 +312,7 @@ void Tint::Texture::Create(unsigned int w, unsigned int h, const Image& data)
     }
 
     //TODO: Incorporate float stuff
-    GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, 
+    GL_CALL(glTexImage2D(static_cast<GLenum>(kind), 0, internalFormat, width, height, 0, 
         GL_RGBA, GL_UNSIGNED_BYTE, data.GetRawData().data()));
 
     SetWrapMode(WrapMode::Repeat, WrapMode::Repeat);
@@ -362,7 +361,7 @@ void Tint::Texture::Create(unsigned int w, unsigned int h, Image::Format f)
             break;
     }
 
-    GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, 
+    GL_CALL(glTexImage2D(static_cast<GLenum>(kind), 0, internalFormat, width, height, 0, 
         channelFormat, dataType, nullptr));
 
     SetWrapMode(WrapMode::Repeat, WrapMode::Repeat);
@@ -374,34 +373,34 @@ void Tint::Texture::Create(unsigned int w, unsigned int h, Image::Format f)
 void Tint::Texture::Bind(unsigned int textureUnit) const
 {
     GL_CALL(glActiveTexture(GL_TEXTURE0 + textureUnit));
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, textureID));
+    GL_CALL(glBindTexture(static_cast<GLenum>(kind), textureID));
 }
 
 void Tint::Texture::Unbind() const
 {
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+    GL_CALL(glBindTexture(static_cast<GLenum>(kind), 0));
 }
 
 void Tint::Texture::SetWrapMode(WrapMode s, WrapMode t)
 {
     Bind();
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, static_cast<GLint>(s)));
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, static_cast<GLint>(t)));
+    GL_CALL(glTexParameteri(static_cast<GLenum>(kind), GL_TEXTURE_WRAP_S, static_cast<GLint>(s)));
+    GL_CALL(glTexParameteri(static_cast<GLenum>(kind), GL_TEXTURE_WRAP_T, static_cast<GLint>(t)));
     Unbind();
 }
 
 void Tint::Texture::SetFilterMode(FilterMode min, FilterMode mag)
 {
     Bind();
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, static_cast<GLint>(min)));
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, static_cast<GLint>(mag)));
+    GL_CALL(glTexParameteri(static_cast<GLenum>(kind), GL_TEXTURE_MIN_FILTER, static_cast<GLint>(min)));
+    GL_CALL(glTexParameteri(static_cast<GLenum>(kind), GL_TEXTURE_MAG_FILTER, static_cast<GLint>(mag)));
     Unbind();
 }
 
 void Tint::Texture::GenerateMipmaps()
 {
     Bind();
-    GL_CALL(glGenerateMipmap(GL_TEXTURE_2D));
+    GL_CALL(glGenerateMipmap(static_cast<GLenum>(kind)));
     Unbind();
 }
 
@@ -426,17 +425,19 @@ Tint::Image Tint::Texture::ReadData(Image::Format format) const
     GLuint fbo = 0;
     GL_CALL(glGenFramebuffers(1, &fbo));
     GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, fbo));
-    GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureID, 0));
+    GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, static_cast<GLenum>(kind), textureID, 0));
 
     // Read pixels
     GL_CALL(glReadBuffer(GL_COLOR_ATTACHMENT0));
     GL_CALL(glReadPixels(0, 0, width, height, static_cast<GLint>(format), GL_UNSIGNED_BYTE, buffer.data()));
 
     // Cleanup
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDeleteFramebuffers(1, &fbo);
+    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+    GL_CALL(glDeleteFramebuffers(1, &fbo));
 
     img.SetRawData(buffer);
 
     Unbind();
+
+    return img;
 }

@@ -30,10 +30,11 @@ namespace Tint
         void SetInt(const std::string& name, glm::ivec2 value) const;
         void SetInt(const std::string& name, glm::ivec3 value) const;
         void SetInt(const std::string& name, glm::ivec4 value) const;
-        void SetImage(const std::string &name, const Tint::Texture& value) const;
+        void SetTexture(const std::string &name, const Texture &value) const;
 
-        void BindUBO(const std::string& name, Buffer& buffer, uint bindingPoint) const;
-        void BindSSBO(const std::string& name, Buffer& buffer, uint bindingPoint) const;
+        void BindImage(const std::string &name, const Tint::Texture& value) const;
+        void BindUBO(const std::string &name, const Buffer &buffer) const;
+        void BindSSBO(const std::string &name, const Buffer &buffer) const;
 
         void Use() const;
 
@@ -42,7 +43,11 @@ namespace Tint
         std::vector<uint> shaderIDs;
         std::vector<std::pair<Tint::Shader::ShaderType, std::string>> mainSource;
         std::unordered_map<std::string, std::string> shaderSources;
+        std::unordered_map<std::string, uint> uniformLocations;
+        std::unordered_map<std::string, std::pair<uint, uint>> uboLocations;
+        std::unordered_map<std::string, std::pair<uint, uint>> ssboLocations;
         bool LoadRecursive(const std::string& filepath, std::string& output, int depth);
+        void ReflectShaderVariables();
         uint GetUniformLocation(const std::string& name) const;
     };
 } // namespace Tint

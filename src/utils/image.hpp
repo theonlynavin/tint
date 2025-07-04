@@ -58,7 +58,14 @@ namespace Tint
             LinearMipmapLinear = GL_LINEAR_MIPMAP_LINEAR
         };
 
-        Texture();
+        enum class Kind
+        {
+            Image2D = GL_TEXTURE_2D,
+            Image3D = GL_TEXTURE_3D,
+            Buffer = GL_TEXTURE_BUFFER
+        };
+
+        Texture(const Texture::Kind& kind, const Image::Format& format);
         ~Texture();
 
         // Disallow copying
@@ -88,6 +95,7 @@ namespace Tint
     private:
         unsigned int textureID;
         Image::Format format;
+        Texture::Kind kind;
         unsigned int width;
         unsigned int height;
     };

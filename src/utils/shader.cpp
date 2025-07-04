@@ -75,14 +75,69 @@ bool Tint::Shader::LoadRecursive(const std::string &filepath, std::string& outpu
     return true;
 }
 
+void Tint::Shader::ReflectShaderVariables()
+{
+    GLint numUniforms = 0;
+    GL_CALL(glGetProgramiv(programID, GL_ACTIVE_UNIFORMS, &numUniforms));
+
+    char nameBuf[256];
+    for (int i = 0; i < numUniforms; ++i) {
+        GLenum type;
+        GLint size;
+        GL_CALL(glGetActiveUniform(programID, i, sizeof(nameBuf), nullptr, &size, &type, nameBuf));
+
+        GLint loc = glGetUniformLocation(programID, nameBuf); GL_CALL();
+        std::string name(nameBuf);
+        uniformLocations[name] = loc;
+    }
+
+    GLint numUBOs = 0;
+    GL_CALL(glGetProgramInterfaceiv(programID, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &numUBOs));
+
+    for (int i = 0; i < numUBOs; ++i) {
+        GLint nameLen = 0;
+        GL_CALL(glGetProgramResourceiv(programID, GL_UNIFORM_BLOCK, i, 1,
+            nullptr, 1, nullptr, &nameLen));
+
+        std::vector<char> nameBuf(nameLen);
+        GL_CALL(glGetProgramResourceName(programID, GL_UNIFORM_BLOCK, i, nameLen, nullptr, nameBuf.data()));
+        std::string name(nameBuf.data());
+
+        GLint binding = 0;
+        GL_CALL(glGetProgramResourceiv(programID, GL_UNIFORM_BLOCK, i, 1,
+            nullptr, 1, nullptr, &binding));
+
+        uboLocations[name] = {static_cast<uint>(i), static_cast<uint>(binding)};
+    }
+    GLint numSSBOs = 0;
+    GL_CALL(glGetProgramInterfaceiv(programID, GL_SHADER_STORAGE_BLOCK, GL_ACTIVE_RESOURCES, &numSSBOs));
+
+    for (int i = 0; i < numSSBOs; ++i) {
+        GLint nameLen = 0;
+        GL_CALL(glGetProgramResourceiv(programID, GL_SHADER_STORAGE_BLOCK, i, 1,
+            nullptr, 1, nullptr, &nameLen));
+
+        std::vector<char> nameBuf(nameLen);
+        GL_CALL(glGetProgramResourceName(programID, GL_SHADER_STORAGE_BLOCK, i, nameLen, nullptr, nameBuf.data()));
+        std::string name(nameBuf.data());
+
+        GLint binding = 0;
+        GL_CALL(glGetProgramResourceiv(programID, GL_SHADER_STORAGE_BLOCK, i, 1,
+            nullptr, 1, nullptr, &binding));
+
+        ssboLocations[name] = {static_cast<uint>(i), static_cast<uint>(binding)};
+    }
+}
+
 GLuint Tint::Shader::GetUniformLocation(const std::string &name) const
-{   
-    GLint location = glGetUniformLocation(programID, name.c_str()); GL_CALL();
-    if (location == -1) 
+{  
+    auto it = uniformLocations.find(name); 
+    if (it == uniformLocations.end())
     {
         TRaiseWarning("Uniform '" + name + "' not found in shader!", "Shader");
+        return -1;
     }
-    return location;
+    return it->second;
 }
 
 Tint::Shader::Shader(const std::vector<std::pair<std::string, Tint::Shader::ShaderType>> &shaderpaths)
@@ -106,7 +161,7 @@ Tint::Shader::~Shader()
 {
     if (programID != 0)
     {
-        glDeleteProgram(programID);
+        GL_CALL(glDeleteProgram(programID));
     }
 }
 
@@ -139,11 +194,11 @@ void Tint::Shader::Compile()
 
         // Check for compilation errors
         GLint success;
-        glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
+        GL_CALL(glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success));
         if (!success) 
         {
             GLchar infoLog[1024];
-            glGetShaderInfoLog(shaderID, sizeof(infoLog), nullptr, infoLog);
+            GL_CALL(glGetShaderInfoLog(shaderID, sizeof(infoLog), nullptr, infoLog));
             TRaiseError("Shader compilation failed:\n" + std::string(infoLog), "Shader::Compile");
         }
 
@@ -151,87 +206,106 @@ void Tint::Shader::Compile()
     }
     
     GL_CALL(glLinkProgram(programID));
+
     // Check for linking errors
     GLint success;
-    glGetProgramiv(programID, GL_LINK_STATUS, &success);
+    GL_CALL(glGetProgramiv(programID, GL_LINK_STATUS, &success));
     if (!success) 
     {
         GLchar infoLog[1024];
-        glGetProgramInfoLog(programID, sizeof(infoLog), nullptr, infoLog);
+        GL_CALL(glGetProgramInfoLog(programID, sizeof(infoLog), nullptr, infoLog));
         TRaiseError("Shader program linking failed:\n" + std::string(infoLog), "Shader::Compile");
     }
+
+    // Update uniforms, TBOs, UBOs, SSBOs
+    ReflectShaderVariables();
 }
 
 void Tint::Shader::SetFloat(const std::string &name, float value) const
 {
-    glUniform1f(GetUniformLocation(name), value);
+    GL_CALL(glUniform1f(GetUniformLocation(name), value));
 }
 
 void Tint::Shader::SetFloat(const std::string &name, glm::vec2 value) const
 {
-    glUniform2f(GetUniformLocation(name), value.x, value.y);
+    GL_CALL(glUniform2f(GetUniformLocation(name), value.x, value.y));
 }
 
 void Tint::Shader::SetFloat(const std::string &name, glm::vec3 value) const
 {
-    glUniform3f(GetUniformLocation(name), value.x, value.y, value.z);
+    GL_CALL(glUniform3f(GetUniformLocation(name), value.x, value.y, value.z));
 }
 
 void Tint::Shader::SetFloat(const std::string &name, glm::vec4 value) const
 {
-    glUniform4f(GetUniformLocation(name), value.x, value.y, value.z, value.w);
+    GL_CALL(glUniform4f(GetUniformLocation(name), value.x, value.y, value.z, value.w));
 }
 
 void Tint::Shader::SetInt(const std::string &name, int value) const
 {
-    glUniform1i(GetUniformLocation(name), value);
+    GL_CALL(glUniform1i(GetUniformLocation(name), value));
 }
 
 void Tint::Shader::SetInt(const std::string &name, glm::ivec2 value) const
 {
-    glUniform2i(GetUniformLocation(name), value.x, value.y);
+    GL_CALL(glUniform2i(GetUniformLocation(name), value.x, value.y));
 }
 
 void Tint::Shader::SetInt(const std::string &name, glm::ivec3 value) const
 {
-    glUniform3i(GetUniformLocation(name), value.x, value.y, value.z);
+    GL_CALL(glUniform3i(GetUniformLocation(name), value.x, value.y, value.z));
 }
 
 void Tint::Shader::SetInt(const std::string &name, glm::ivec4 value) const
 {
-    glUniform4i(GetUniformLocation(name), value.x, value.y, value.z, value.w);
+    GL_CALL(glUniform4i(GetUniformLocation(name), value.x, value.y, value.z, value.w));
 }
 
-void Tint::Shader::SetImage(const std::string &name, const Tint::Texture &value) const
+void Tint::Shader::SetTexture(const std::string &name, const Tint::Texture &value) const
+{
+    value.Bind(GetUniformLocation(name));
+}
+
+void Tint::Shader::BindImage(const std::string &name, const Tint::Texture &value) const
 {   
     GLint index;
-    glGetUniformiv(programID, GetUniformLocation(name), &index);
-    glBindImageTexture(index, value.GetID(), 0, GL_FALSE, 0, GL_READ_WRITE, static_cast<GLenum>(value.GetFormat()));
+    GL_CALL(glGetUniformiv(programID, GetUniformLocation(name), &index));
+    GL_CALL(glBindImageTexture(index, value.GetID(), 0, GL_FALSE, 0, GL_READ_WRITE, static_cast<GLenum>(value.GetFormat())));
+
+    value.Bind(index);
 }
 
-void Tint::Shader::BindUBO(const std::string &name, Buffer& buffer, uint bindingPoint) const
+void Tint::Shader::BindUBO(const std::string &name, const Buffer& buffer) const
 {
-    GLint index = glGetUniformBlockIndex(programID, name.c_str());
-    if (index == GL_INVALID_INDEX) 
+    auto it = uboLocations.find(name); 
+    if (it == uboLocations.end())
     {
         TRaiseWarning("Block '" + name + "' not found in shader!", "Shader::BindUBO");
+        return;
     }
-    glUniformBlockBinding(programID, index, bindingPoint);
-    buffer.BindBase(bindingPoint);
+
+    // it->second.first: index
+    // it->second.second: bindingPoint
+    GL_CALL(glUniformBlockBinding(programID, it->second.first, it->second.second));
+    buffer.BindBase(it->second.second);
 }
 
-void Tint::Shader::BindSSBO(const std::string &name, Buffer& buffer, uint bindingPoint) const
+void Tint::Shader::BindSSBO(const std::string &name, const Buffer& buffer) const
 {        
-    GLint index = glGetProgramResourceIndex(programID, GL_SHADER_STORAGE_BLOCK, name.c_str());
-    if (index == GL_INVALID_INDEX) 
+    auto it = ssboLocations.find(name); 
+    if (it == ssboLocations.end())
     {
         TRaiseWarning("Block '" + name + "' not found in shader!", "Shader::BindSSBO");
+        return;
     }
-    glShaderStorageBlockBinding(programID, index, bindingPoint);
-    buffer.BindBase(bindingPoint);
+    
+    // it->second.first: index
+    // it->second.second: bindingPoint
+    GL_CALL(glShaderStorageBlockBinding(programID, it->second.first, it->second.second));
+    buffer.BindBase(it->second.second);
 }
 
 void Tint::Shader::Use() const
 {
-    glUseProgram(programID);
+    GL_CALL(glUseProgram(programID));
 }
