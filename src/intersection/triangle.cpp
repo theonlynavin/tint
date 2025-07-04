@@ -51,3 +51,14 @@ Tint::real Tint::Triangle::area() const
 {
     return glm::length(glm::cross(v2.position - v1.position, v3.position - v1.position)) * 0.5;
 }
+
+Tint::gl_Triangle Tint::Triangle::ToGLTriangle() const
+{
+    return gl_Triangle{
+        glm::vec4(v1.position, v1.normal.x),
+        glm::vec4(v2.position, v1.normal.y),
+        glm::vec4(v3.position, v1.normal.z),
+        glm::vec4(v2.normal, 0),
+        glm::vec4(v3.normal, materialID)
+    };
+}

@@ -9,16 +9,10 @@ namespace Tint
 
     struct gl_BVHNode
     {   
-        glm::vec3 aabb_min;
-        glm::vec3 aabb_max;
-    
-        int first_child;
-        int second_child;
-        int tri_offset;
-        int tri_count;
-    
-        int is_leaf;
-        int pad0, pad1, pad2; // padding for alignment
+        glm::vec4 aabb_min; // .w = is_leaf
+        glm::vec4 aabb_max; // .w is unused
+        glm::vec4 data;     // .xy = first_child, second_child or tri_offset, tri_count
+                            //       for is_leaf = 0              for is_leaf = 1
     };
 
     struct BVHNode

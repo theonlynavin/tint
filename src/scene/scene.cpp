@@ -43,23 +43,20 @@ void Tint::Scene::BuildBVH()
     bvh = new BVH(triangles);
 }
 
-std::pair<std::vector<Tint::gl_BVHNode>, std::vector<Tint::Triangle>> Tint::Scene::BuildLBVH()
+std::pair<std::vector<Tint::gl_BVHNode>, std::vector<Tint::gl_Triangle>> Tint::Scene::BuildLBVH()
 {
-    
-    /*std::vector<Triangle> mytris;
-    for (auto& obj : objects)
+    BuildBVH();
+
+    auto triangles = bvh->GetTriangles();
+    std::vector<gl_Triangle> glTriangles;
+    glTriangles.reserve(triangles.size());
+
+    for (auto &&tri : triangles)
     {
-        obj.GenerateTriangles();
-        std::vector<Triangle> objTris = obj.GetGeneratedTriangles();
-     
-        //triangles.reserve(triangles.size() + objTris.size());
-        mytris.insert(mytris.end(), objTris.begin(), objTris.end());
+        glTriangles.emplace_back(tri.ToGLTriangle());
     }
 
-    LBVH lbvh = LBVH(mytris);*/
-
-    BuildBVH();
-    return std::make_pair(bvh->ToGLBVH(), bvh->GetTriangles());
+    return std::make_pair(bvh->ToGLBVH(), glTriangles);
 }
 
 bool Tint::Scene::ClosestIntersection(Ray& ray, Surface &surface)

@@ -26,32 +26,6 @@ Tint::BVH::~BVH()
     delete root;
 }
 
-
-int Tint::BVH::FlattenBVH(BVHNode *root, std::vector<gl_BVHNode> &nodes) const
-{
-    int offset = nodes.size();
-    nodes.push_back(gl_BVHNode());
-
-    gl_BVHNode& node = nodes[offset];
-    node.aabb_max = root->bounds.GetMax();
-    node.aabb_min = root->bounds.GetMin();
-    
-    if (root->numTris > 0)
-    {
-        node.is_leaf = true;
-        node.tri_offset = root->offset;
-        node.tri_count = root->numTris;
-    }
-    else
-    {
-        node.is_leaf = false;
-        node.first_child = FlattenBVH(root->children[0], nodes);
-        node.second_child = FlattenBVH(root->children[1], nodes);
-    }
-
-    return offset;
-}
-
 std::vector<Tint::gl_BVHNode> Tint::BVH::ToGLBVH() const
 {
     struct StackEntry {
@@ -74,22 +48,22 @@ std::vector<Tint::gl_BVHNode> Tint::BVH::ToGLBVH() const
         int index = out.size();
         out.push_back(gl_BVHNode{});
         gl_BVHNode& linear = out[index];
-        linear.aabb_max = node->bounds.GetMax();
-        linear.aabb_min = node->bounds.GetMin();
+        linear.aabb_max = glm::vec4(node->bounds.GetMax(), 0);
+        linear.aabb_min = glm::vec4(node->bounds.GetMin(), 0);
         
         if (entry.parentIndex != -1) {
             if (entry.isFirst)
-                out[entry.parentIndex].first_child = index;
+                out[entry.parentIndex].data.x = index;
             else
-                out[entry.parentIndex].second_child = index;
+                out[entry.parentIndex].data.y = index;
         }
 
         if (node->numTris > 0) {
-            linear.is_leaf = true;
-            linear.tri_offset = node->offset;
-            linear.tri_count = node->numTris;
+            linear.aabb_min.w = true;       // is_leaf = true
+            linear.data.x = node->offset;
+            linear.data.y = node->numTris;
         } else {
-            linear.is_leaf = false;
+            linear.aabb_min.w = false;      // is_leaf = false
             stack.push({ node->children[1], index, false });
             stack.push({ node->children[0], index, true  });
         }

@@ -31,7 +31,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
      ${CMAKE_BINARY_DIR}/../bin/${CMAKE_SYSTEM_NAME}/${CMAKE_BUILD_TYPE}
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE TINT_DEBUG GLEW_STATIC)
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLEW_STATIC)
 
 target_include_directories(tint PRIVATE include(glm::glm))
 target_include_directories(tint PRIVATE GLFW_INCLUDE_DIRS)
@@ -44,6 +44,8 @@ target_link_libraries(tint PRIVATE OpenGL::GL)
 target_link_libraries(tint PRIVATE OpenGL::OpenGL)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+    target_compile_definitions(${PROJECT_NAME} PRIVATE TINT_DEBUG)
     target_compile_options(${PROJECT_NAME} PRIVATE
         -Wall -Wextra)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")

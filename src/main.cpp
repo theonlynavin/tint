@@ -53,77 +53,6 @@ void renderQuad()
     glBindVertexArray(0);
 }
 
-struct gl_BVHNode
-{
-    glm::vec4 bounds_min;  
-    glm::vec4 bounds_max; 
-    glm::vec4 children_or_tris;
-};
-
-struct gl_Triangle
-{
-    glm::vec4 v0xyz_n0x;  
-    glm::vec4 v1xyz_n0y;  
-    glm::vec4 v2xyz_n0z;  
-    glm::vec4 n1xyz_empty;  
-    glm::vec4 n2xyz_material;  
-};
-
-std::pair<std::vector<gl_BVHNode>, std::vector<gl_Triangle>> construct_gpu_bvh(Tint::Scene& scene)
-{  
-    auto nodes = scene.BuildLBVH();
-
-    std::vector<gl_BVHNode> v_bvh; v_bvh.reserve(nodes.first.size());
-
-    for (size_t i = 0; i < nodes.first.size(); i++)
-    {
-        Tint::gl_BVHNode node = nodes.first[i];
-
-        if (node.is_leaf)
-        {
-            v_bvh.emplace_back(gl_BVHNode{
-                glm::vec4(node.aabb_min, 1), 
-                glm::vec4(node.aabb_max, 0),
-                glm::vec4(node.tri_offset,
-                    node.tri_count,
-                    0.0f,
-                    0.0f
-                )
-            });
-        }
-        else
-        {
-            v_bvh.emplace_back(gl_BVHNode{
-                glm::vec4(node.aabb_min, 0), 
-                glm::vec4(node.aabb_max, 0),
-                glm::vec4(node.first_child,
-                    node.second_child,
-                    0.0f,
-                    0.0f
-                )
-            });
-        }
-    }
-
-    std::vector<gl_Triangle> v_tri; v_tri.reserve(nodes.second.size());
-
-    for (size_t i = 0; i < nodes.second.size(); i++)
-    {
-        Tint::Triangle tri = nodes.second[i];
-        v_tri.emplace_back(
-            gl_Triangle{
-                glm::vec4(tri.v1.position, tri.v1.normal.x),
-                glm::vec4(tri.v2.position, tri.v1.normal.y),
-                glm::vec4(tri.v3.position, tri.v1.normal.z),
-                glm::vec4(tri.v2.normal, 0),
-                glm::vec4(tri.v3.normal, tri.materialID)
-            }
-        );
-    }
-    
-    return {v_bvh, v_tri};
-}
-
 int main_cpu(int argc, char const *argv[])
 {
     auto begin = std::chrono::high_resolution_clock::now();
@@ -191,24 +120,23 @@ int main_opengl(int argc, char const *argv[])
     begin = std::chrono::high_resolution_clock::now();
 
     Tint::Camera cam(glm::vec2(WIDTH, HEIGHT), M_PI_2, 2, 0);
-    cam.LookAt(glm::vec3(1, 1, 3), glm::vec3(0, 0, 0));
+    cam.LookAt(glm::vec3(2, 2, 5), glm::vec3(0, 0, 0));
     cam.frame.LockTransform();
 
     Tint::gl_Camera glcam = cam.ToGLCamera();
 
     Tint::Scene scene;
-    std::vector<Tint::Object> model = Tint::LoadModel("assets/tyra.obj");
+    std::vector<Tint::Object> model = Tint::LoadModel("assets/dragon.obj");
     model[0].frame.Scale(glm::vec3(0.5));
-    model[0].frame.Rotate(glm::vec3(0, M_PI, 0));
     scene.AddObjects(model);
-    model = Tint::LoadModel("assets/cube.obj");
+    model = Tint::LoadModel("assets/bunny.obj");
     model[0].frame.Scale(glm::vec3(0.4));
-    model[0].frame.Translate(glm::vec3(1.5, 0, 0));
+    model[0].frame.Translate(glm::vec3(-0.5, 0, 2));
     scene.AddObjects(model);
 
     end = std::chrono::high_resolution_clock::now();
     
-    auto lbvh = construct_gpu_bvh(scene);
+    auto lbvh = scene.BuildLBVH();
     auto&& v_bvh = lbvh.first;
     auto&& v_tri = lbvh.second;
     
@@ -217,12 +145,12 @@ int main_opengl(int argc, char const *argv[])
     Tint::Texture bvh_texture(Tint::Texture::Kind::Buffer, Tint::Image::Format::RGBA32F); 
     Tint::Texture tri_texture(Tint::Texture::Kind::Buffer, Tint::Image::Format::RGBA32F);
 
-    bvh_buffer.Allocate(v_bvh.size() * sizeof(gl_BVHNode), Tint::Buffer::BufferType::TBO);
-    bvh_buffer.Store(v_bvh.data(), v_bvh.size() * sizeof(gl_BVHNode), 0);
+    bvh_buffer.Allocate(v_bvh.size() * sizeof(Tint::gl_BVHNode), Tint::Buffer::BufferType::TBO);
+    bvh_buffer.Store(v_bvh.data(), v_bvh.size() * sizeof(Tint::gl_BVHNode), 0);
     bvh_buffer.Attach(bvh_texture);
 
-    tri_buffer.Allocate(v_tri.size() * sizeof(gl_Triangle), Tint::Buffer::BufferType::TBO);
-    tri_buffer.Store(v_tri.data(), v_tri.size() * sizeof(gl_Triangle), 0);
+    tri_buffer.Allocate(v_tri.size() * sizeof(Tint::gl_Triangle), Tint::Buffer::BufferType::TBO);
+    tri_buffer.Store(v_tri.data(), v_tri.size() * sizeof(Tint::gl_Triangle), 0);
     tri_buffer.Attach(tri_texture);
 
     std::cout << "Took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms to setup the scene!\n";
@@ -240,7 +168,6 @@ int main_opengl(int argc, char const *argv[])
     shader.SetFloat("camera.aspect_ratio", glcam.aspect);
     shader.SetFloat("camera.aperture", glcam.aperture);
     shader.SetFloat("camera.focal_length", glcam.focal_length);
-    shader.SetInt("total_tris", v_tri.size());
     shader.SetTexture("bvhNodesTex", bvh_texture);
     shader.SetTexture("trianglesTex", tri_texture);
 
@@ -286,7 +213,6 @@ int main_opengl(int argc, char const *argv[])
     
     return 0;
 }
-
 
 int main(int argc, char const *argv[])
 {

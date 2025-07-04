@@ -10,6 +10,15 @@ namespace Tint
     };    
 
     struct Ray;
+
+    struct gl_Triangle
+    {
+        glm::vec4 v0xyz_n0x;  
+        glm::vec4 v1xyz_n0y;  
+        glm::vec4 v2xyz_n0z;  
+        glm::vec4 n1xyz_empty;  
+        glm::vec4 n2xyz_material_id;
+    };
     
     struct Triangle
     {
@@ -19,6 +28,7 @@ namespace Tint
         glm::vec3 normal(glm::vec2 uv) const;
         glm::vec3 point(glm::vec2 uv) const;
         real area() const;
+        gl_Triangle ToGLTriangle() const;
     };
 
     struct Surface
