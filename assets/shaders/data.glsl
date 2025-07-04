@@ -1,3 +1,6 @@
+layout(binding = 2) uniform samplerBuffer bvhNodesTex;
+layout(binding = 3) uniform samplerBuffer trianglesTex;
+
 struct BVHNode {
     vec4 bounds_min;  // .w contains node type (0=interior, 1=leaf)
     vec4 bounds_max;  // .w unused
@@ -6,20 +9,37 @@ struct BVHNode {
 };
 
 struct Triangle {
-    vec4 v0;  // xyz=pos0, w=normal0.x
-    vec4 v1;  // xyz=pos1, w=normal0.y
-    vec4 v2;  // xyz=pos2, w=normal0.z
-    vec4 n0;
-    vec4 n1;  // xyz=normal1, w=normal2.x
-    vec4 n2;  // yz=normal2.yz, w=material_id
+    vec3 v0; 
+    vec3 v1;  
+    vec3 v2;  
+    vec3 n0;
+    vec3 n1;  
+    vec3 n2;  
+    int material_id;
 };
 
-// BVH Node Components (separate buffers)
-layout(std430, binding = 1) readonly buffer BVHNodes {
-    BVHNode nodes[];
-};
+BVHNode fetchBVHNode(int index) {
+    BVHNode node;
+    node.bounds_min = texelFetch(bvhNodesTex, index * 3 + 0);
+    node.bounds_max = texelFetch(bvhNodesTex, index * 3 + 1);
+    vec4 temp = texelFetch(bvhNodesTex, index * 3 + 2);
+    node.children_or_tris = ivec2(temp.x, temp.y);
+    return node;
+}
 
-// Triangle Components (separate buffers)
-layout(std430, binding = 2) readonly buffer TriangleData {
-    Triangle tris[];
-};
+Triangle fetchTriangle(int index) {
+    Triangle tri;
+    vec4 v0 = texelFetch(trianglesTex, index * 5 + 0);
+    vec4 v1 = texelFetch(trianglesTex, index * 5 + 1);
+    vec4 v2 = texelFetch(trianglesTex, index * 5 + 2);
+    vec4 n1 = texelFetch(trianglesTex, index * 5 + 3);
+    vec4 n2 = texelFetch(trianglesTex, index * 5 + 4);
+    tri.v0 = v0.xyz;
+    tri.v1 = v1.xyz;
+    tri.v2 = v2.xyz;
+    tri.n0 = vec3(v0.w, v1.w, v2.w);
+    tri.n1 = n1.xyz;
+    tri.n2 = n2.xyz;
+    tri.material_id = int(n2.w);
+    return tri;
+}

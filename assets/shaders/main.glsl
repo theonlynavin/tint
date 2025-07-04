@@ -1,15 +1,16 @@
 #version 430 core
 
-layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 	
 // Images 
 layout(rgba32f, binding = 0) uniform image2D imgOutput;
+layout(rgba32f, binding = 1) uniform image2D accumOutput;
 
 // Include other files
 #include "data.glsl"
 #include "rng.glsl"
 #include "camera.glsl"
-#include "intersection.glsl"
+#include "illum.glsl"
 
 uniform Camera camera;
 uniform int frame_count;
@@ -30,20 +31,11 @@ void main() {
         (float(pixel_coords.y) + rng_next(rng_state)) / float(image_size.y)
     );
     
-    // Generate camera ray
-    Ray ray = generate_ray(camera, uv, rng_state);
-    
-    // Intersect scene
-    Surface surface = intersect_scene(ray);
-    
-    // Output depth as color
-    vec4 color;
-    if (surface.tri_index >= 0) {
-        float depth = surface.distance;
-        color = vec4(vec3(depth * 0.1), 1.0); // Scale depth for better visualization
-    } else {
-        color = vec4(0.0, 0.0, 0.0, 1.0); // Black for no hit
-    }
+    // Path traced color
+    vec4 sampleColor = vec4(get_illum(camera, uv, rng_state), 1);
+    vec4 accumColor = imageLoad(accumOutput, pixel_coords).rgba;
+    vec4 result = (accumColor * frame_count + sampleColor) / (frame_count + 1);
 
-    imageStore(imgOutput, pixel_coords, color);
+    imageStore(accumOutput, pixel_coords, result);
+    imageStore(imgOutput, pixel_coords, pow(result, vec4(1/1.5)));
 }

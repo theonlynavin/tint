@@ -14,6 +14,7 @@ namespace Tint
     struct Triangle
     {
         Vertex v1, v2, v3;
+        uint materialID;
         bool intersect(Ray &ray, glm::vec2 &uv) const;
         glm::vec3 normal(glm::vec2 uv) const;
         glm::vec3 point(glm::vec2 uv) const;

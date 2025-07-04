@@ -91,7 +91,7 @@ std::vector<Tint::gl_BVHNode> Tint::BVH::ToGLBVH() const
         } else {
             linear.is_leaf = false;
             stack.push({ node->children[1], index, false });
-            stack.push({ node->children[0],  index, true  });
+            stack.push({ node->children[0], index, true  });
         }
     }
 
@@ -373,9 +373,9 @@ bool Tint::BVH::ComputeSplitAxis(std::vector<BVHLeaf> &leaves, uint first, uint 
     splitAxis = 0; // x-axis
 
     glm::vec3 size = centroidBounds.GetMax() - centroidBounds.GetMin();
-    if (size.y > size.x && size.y > size.z)
+    if (size.y >= size.x && size.y >= size.z)
         splitAxis = 1;
-    else if (size.z > size.x && size.z > size.y)
+    else if (size.z >= size.x && size.z >= size.y)
         splitAxis = 2;
 
     return (size != vec3(0, 0, 0));

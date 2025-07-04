@@ -1,3 +1,6 @@
+#ifndef TINT_RNG
+#define TINT_RNG
+
 // Hash function from https://www.shadertoy.com/view/4djSRW
 uint hash(uint x) {
     x += (x << 10u);
@@ -20,3 +23,5 @@ uint rng_xorshift(inout uint state) {
 float rng_next(inout uint state) {
     return float(rng_xorshift(state)) / float(0xFFFFFFFFu);
 }
+
+#endif
