@@ -26,7 +26,7 @@ BVHNode fetch_bvh_node(int index) {
     node.bounds_min = texelFetch(bvhNodesTex, index * 3 + 0);
     node.bounds_max = texelFetch(bvhNodesTex, index * 3 + 1);
     vec4 temp = texelFetch(bvhNodesTex, index * 3 + 2);
-    node.children_or_tris = ivec2(temp.x, temp.y);
+    node.data = ivec2(temp.x, temp.y);
     return node;
 }
 
