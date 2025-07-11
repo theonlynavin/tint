@@ -32,7 +32,7 @@ namespace Tint
         void SetInt(const std::string& name, glm::ivec4 value) const;
         void SetTexture(const std::string &name, const Texture &value) const;
 
-        void BindImage(const std::string &name, const Tint::Texture& value) const;
+        void BindImage(const std::string &name, const Texture &value) const;
         void BindUBO(const std::string &name, const Buffer &buffer) const;
         void BindSSBO(const std::string &name, const Buffer &buffer) const;
 

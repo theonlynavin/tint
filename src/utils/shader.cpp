@@ -1,6 +1,6 @@
 #include "shader.hpp"
 #include "buffer.hpp"
-#include "image.hpp"
+#include "texture.hpp"
 #include <fstream>
 #include <filesystem>
 #include <GL/glew.h>
