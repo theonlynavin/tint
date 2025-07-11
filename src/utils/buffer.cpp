@@ -1,5 +1,5 @@
 #include "buffer.hpp"
-#include "image.hpp"
+#include "texture.hpp"
 #include <GL/glew.h>
 
 Tint::Buffer::Buffer()

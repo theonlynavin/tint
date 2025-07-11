@@ -1,8 +1,9 @@
 #pragma once
-#include "../utils/frame.hpp"
-#include "../intersection/triangle.hpp"
+#include "frame.hpp"
 #include "../intersection/aabb.hpp"
-#include "../material/material.hpp"
+#include "../resources/mesh.hpp"
+
+#include "material.hpp"
 #include <vector>
 #include <string>
 
@@ -10,38 +11,43 @@ namespace Tint
 {
     struct Ray;
     class Material;
+    class Mesh;
+
+    typedef std::shared_ptr<Mesh> MeshPtr;
+    typedef std::shared_ptr<Material> MaterialPtr;
+    typedef std::shared_ptr<Texture> TexturePtr;
+
+    typedef std::pair<MeshPtr, MaterialPtr> MeshMat;
     
     class Object
     {
     private:
-        std::vector<Triangle> triangles;
+        std::vector<Triangle> triangles;        
+        std::vector<MeshMat> meshes;
         AABB bounds;
-        std::vector<Vertex> vertices;
-        std::vector<uint> indices;
     public:
-    
-        std::string name;
-
-        Object(const std::vector<Vertex>& vertices, const std::vector<uint>& indices);
+        Object(const std::vector<MeshMat>& meshes);
         ~Object();
-        
         
         /// @brief Locks the frame and converts vertex data to triangles
         void GenerateTriangles();
 
         std::vector<Triangle> GetGeneratedTriangles() const;
+        std::vector<MeshMat> GetRawMeshes() const;
 
-        AABB GetBounds();
+        void AddMesh(const std::vector<MeshMat>& meshes);
 
-        /// @brief 
-        /// @param ray 
-        /// @return 
-        bool Intersect(Ray& ray, Surface& hit);
+        /// @brief Returns the axis-aligned bounding box for the union of all meshes
+        /// @note GenerateTriangles() must have been called before
+        AABB GetBounds() const;
 
-        Frame frame;
-        //std::shared_ptr<Material> material;
-    };
+        /// @brief Tests the ray against the meshes of the model
+        /// @note GenerateTriangles() must have been called before
+        /// @param ray Ray (ray distances may be modified)
+        /// @param surf Surface of hit triangle (properties may be modified)
+        /// @return True if the ray hits the object, False otherwise
+        bool Intersect(Ray& ray, Surface& surf) const;
 
-    std::vector<Object> LoadModel(const std::string& filepath);
-    
+        Frame frame;    // Transformation frame
+    };    
 } // namespace Tint

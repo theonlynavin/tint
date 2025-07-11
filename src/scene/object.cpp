@@ -1,10 +1,8 @@
 #include "object.hpp"
 #include "../intersection/aabb.hpp"
 
-#include <OBJ_Loader.h>
-
-Tint::Object::Object(const std::vector<Vertex> &vertices, const std::vector<uint> &indices)
-    : vertices(vertices), indices(indices)
+Tint::Object::Object(const std::vector<MeshMat>& meshes)
+    : meshes(meshes)
 {
 }
 
@@ -14,31 +12,42 @@ Tint::Object::~Object()
 
 void Tint::Object::GenerateTriangles()
 {
-    frame.LockTransform();
-    glm::mat4 transform = frame.GetFrameToWorld();
-    glm::mat4 invtransformTranspose = glm::transpose(frame.GetWorldToFrame());
+    // TODO: a nice way of integrating material IDs to triangle data
 
     triangles.clear();
-    triangles.reserve(indices.size() / 3);
 
-    for (size_t i = 0; i < indices.size(); i += 3)
+    for (auto &&meshmat : meshes)
     {
-        Vertex v1 = vertices[indices[i]];
-        Vertex v2 = vertices[indices[i+1]];
-        Vertex v3 = vertices[indices[i+2]];
+        auto mesh = meshmat.first;
 
-        v1.position = (transform * glm::vec4(v1.position, 1)).xyz();
-        v2.position = (transform * glm::vec4(v2.position, 1)).xyz();
-        v3.position = (transform * glm::vec4(v3.position, 1)).xyz();
-
-        v1.normal = (invtransformTranspose * glm::vec4(v1.normal, 0)).xyz();
-        v2.normal = (invtransformTranspose * glm::vec4(v2.normal, 0)).xyz();
-        v3.normal = (invtransformTranspose * glm::vec4(v3.normal, 0)).xyz();
-
-        triangles.emplace_back(Triangle{v1,v2,v3});
+        std::vector<Vertex> vertices = mesh->GetVertices();
+        std::vector<uint> indices = mesh->GetIndices();
+    
+        frame.LockTransform();
+        glm::mat4 transform = frame.GetFrameToWorld();
+        glm::mat4 invtransformTranspose = glm::transpose(frame.GetWorldToFrame());
+    
+        triangles.reserve(triangles.size() + indices.size() / 3);
+    
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            Vertex v1 = vertices[indices[i]];
+            Vertex v2 = vertices[indices[i+1]];
+            Vertex v3 = vertices[indices[i+2]];
+    
+            v1.position = (transform * glm::vec4(v1.position, 1)).xyz();
+            v2.position = (transform * glm::vec4(v2.position, 1)).xyz();
+            v3.position = (transform * glm::vec4(v3.position, 1)).xyz();
+    
+            v1.normal = (invtransformTranspose * glm::vec4(v1.normal, 0)).xyz();
+            v2.normal = (invtransformTranspose * glm::vec4(v2.normal, 0)).xyz();
+            v3.normal = (invtransformTranspose * glm::vec4(v3.normal, 0)).xyz();
+    
+            triangles.emplace_back(Triangle{v1,v2,v3});
+        }
+    
+        bounds.Expand(AABB(triangles));
     }
-
-    bounds = AABB(triangles);
 }
 
 std::vector<Tint::Triangle> Tint::Object::GetGeneratedTriangles() const
@@ -46,12 +55,22 @@ std::vector<Tint::Triangle> Tint::Object::GetGeneratedTriangles() const
     return triangles;
 }
 
-Tint::AABB Tint::Object::GetBounds()
+std::vector<Tint::MeshMat> Tint::Object::GetRawMeshes() const
+{
+    return meshes;
+}
+
+void Tint::Object::AddMesh(const std::vector<MeshMat> &m)
+{
+    meshes.insert(meshes.end(), m.begin(), m.end());
+}
+
+Tint::AABB Tint::Object::GetBounds() const
 {
     return bounds;
 }
 
-bool Tint::Object::Intersect(Ray &ray, Surface &hit)
+bool Tint::Object::Intersect(Ray &ray, Surface &hit) const
 {
     bool hitAnything = false;
 
@@ -59,10 +78,10 @@ bool Tint::Object::Intersect(Ray &ray, Surface &hit)
     if (!bounds.Intersect(ray, tbox))
         return false;
 
-    for (Triangle& tri : triangles)
+    for (const Triangle& tri : triangles)
     {
         glm::vec2 uv;
-        if (tri.intersect(ray, uv))
+        if (tri.Intersect(ray, uv))
         {
             hit.hit = tri;
             hit.uv = uv;
@@ -71,37 +90,4 @@ bool Tint::Object::Intersect(Ray &ray, Surface &hit)
     }
 
     return hitAnything;
-}
-
-
-std::vector<Tint::Object> Tint::LoadModel(const std::string &filepath)
-{
-    std::vector<Object> objects;
-    objl::Loader loader;
-
-    if (loader.LoadFile(filepath))
-    {
-        for (auto &&mesh : loader.LoadedMeshes)
-        {
-            std::vector<Vertex> vertices;
-            for (auto &&vert : mesh.Vertices)
-            {
-                vertices.push_back(Vertex{
-                    glm::vec3(vert.Position.X, vert.Position.Y, vert.Position.Z),
-                    glm::vec3(vert.Normal.X, vert.Normal.Y, vert.Normal.Z)
-                });
-            }
-
-            Object obj(vertices, mesh.Indices);
-            obj.name = mesh.MeshName;
-            objects.push_back(obj);
-        }        
-    }
-    else
-    {
-        //TODO: ERROR MESSAGE
-        std::cout << "[Error]: Could not load model '" << filepath << "'\n"; 
-    }
-
-    return objects;
 }
