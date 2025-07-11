@@ -7,28 +7,55 @@ namespace Tint
     {
         glm::vec3 position;
         glm::vec3 normal;
+        glm::vec2 texCoords;
     };    
 
     struct Ray;
 
-    struct gl_Triangle
+    namespace gl 
     {
-        glm::vec4 v0xyz_n0x;  
-        glm::vec4 v1xyz_n0y;  
-        glm::vec4 v2xyz_n0z;  
-        glm::vec4 n1xyz_empty;  
-        glm::vec4 n2xyz_material_id;
-    };
+        struct Triangle
+        {
+            glm::vec4 v0xyz_n0x;  
+            glm::vec4 v1xyz_n0y;  
+            glm::vec4 v2xyz_n0z;  
+            glm::vec4 n1xyz_empty;  
+            glm::vec4 n2xyz_material_id;
+            glm::vec4 t0t1;  
+            glm::vec4 t2_empty;
+        };
+    }
     
-    struct Triangle
+    class Triangle
     {
+    public:
+        Triangle();
+        Triangle(const Vertex& v1, const Vertex& v2, const Vertex& v3);
+
+        ~Triangle() = default;
+        
+        /// @brief Moller-Trumbore ray-triangle intersection
+        /// @param ray Ray (modified if intersects)
+        /// @param uv Barycentric coordinates (modified if intersects)
+        /// @return True if intersects, False otherwise
+        bool Intersect(Ray &ray, glm::vec2 &uv) const;
+
+        /// @brief Normal at given local coordinates
+        /// @param uv Barycentric coordinates
+        glm::vec3 GetNormal(glm::vec2 uv) const;
+
+        /// @brief Global position of given local coordinates
+        /// @param uv Barycentric coordinates
+        glm::vec3 GetPoint(glm::vec2 uv) const;
+
+        /// @brief Surface area of the triangle
+        real GetArea() const;
+
+        gl::Triangle ToGLTriangle() const;
+        
         Vertex v1, v2, v3;
+
         uint materialID;
-        bool intersect(Ray &ray, glm::vec2 &uv) const;
-        glm::vec3 normal(glm::vec2 uv) const;
-        glm::vec3 point(glm::vec2 uv) const;
-        real area() const;
-        gl_Triangle ToGLTriangle() const;
     };
 
     struct Surface
