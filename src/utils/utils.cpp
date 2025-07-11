@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 #include <exception>
 
-void Tint::GLInitialize()
+void Tint::gl::Initialize()
 {
     if (glewInit() != GLEW_OK)
     {
@@ -10,7 +10,7 @@ void Tint::GLInitialize()
     }
 }
 
-void Tint::GLCheckErrors(const char *file, int line)
+void Tint::gl::CheckErrors(const char *file, int line)
 {    
     std::cerr << "Tint has faced an error!\n";
 

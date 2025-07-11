@@ -13,19 +13,22 @@ find_package(OpenGL REQUIRED)
 # Project specific configuration
 add_executable(tint 
     src/main.cpp
-    src/camera/camera.cpp
     src/intersection/aabb.cpp
     src/intersection/bvh.cpp
     src/intersection/triangle.cpp
-    src/material/material.cpp
+    src/resources/mesh.cpp
+    src/resources/image.cpp
+    src/resources/resources.cpp
+    src/scene/camera.cpp
     src/scene/object.cpp
+    src/scene/material.cpp
     src/scene/scene.cpp
-    src/utils/frame.cpp
-    src/utils/image.cpp
+    src/scene/frame.cpp
     src/utils/buffer.cpp
     src/utils/shader.cpp
+    src/utils/texture.cpp
     src/utils/utils.cpp
-    )
+)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
      ${CMAKE_BINARY_DIR}/../bin/${CMAKE_SYSTEM_NAME}/${CMAKE_BUILD_TYPE}

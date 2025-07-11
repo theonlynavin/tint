@@ -5,6 +5,7 @@ struct Surface {
     int tri_index;
     vec3 normal;
     vec3 point;
+    vec2 tex_coords;
     float distance;
 };
 

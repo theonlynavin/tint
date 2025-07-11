@@ -60,6 +60,7 @@ void traverse_bvh(Ray ray, inout Surface surface) {
                         surface.tri_index = tri_idx;
                         surface.point = ray.origin + ray.direction * t;
                         surface.normal = normalize(mix(mix(tri.n0, tri.n1, u), tri.n2, v));
+                        surface.tex_coords = normalize(mix(mix(tri.t0, tri.t1, u), tri.t2, v));
                     }
                 }
             }

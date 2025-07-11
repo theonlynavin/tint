@@ -34,8 +34,8 @@
 # Intermediates and Temporary
 build/
 out/
-bin/**
+bin/
 old/
 
 # IDE
-?.vscode/
+.vscode/

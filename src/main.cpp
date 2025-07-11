@@ -64,14 +64,29 @@ int main_cpu(int argc, char const *argv[])
     cam.frame.LockTransform();
 
     Tint::Scene scene;
-    std::vector<Tint::Object> model = Tint::LoadModel("assets/tyra.obj");
-    model[0].frame.Scale(glm::vec3(0.5));
-    model[0].frame.Rotate(glm::vec3(0, M_PI, 0));
-    scene.AddObjects(model);
-    model = Tint::LoadModel("assets/cube.obj");
-    model[0].frame.Scale(glm::vec3(0.4));
-    model[0].frame.Translate(glm::vec3(1.5, 0, 0));
-    scene.AddObjects(model);
+    auto tyra = Tint::Resources::GetModel("assets/tyra.obj");
+    auto cube = Tint::Resources::GetModel("assets/cube.obj");
+
+    Tint::Material mtl;
+    scene.PushMaterial(mtl, "howdy");
+
+    Tint::Object model(
+        {
+            std::make_pair(tyra[0], scene.FetchMaterial("howdy"))
+        }
+    );
+    model.frame.Scale(glm::vec3(0.5));
+    model.frame.Rotate(glm::vec3(0, M_PI, 0));
+    scene.AddObject(model);
+
+    model = Tint::Object(
+        {
+            std::make_pair(cube[0], scene.FetchMaterial("howdy"))
+        });
+    model.frame.Scale(glm::vec3(0.4));
+    model.frame.Translate(glm::vec3(1.5, 0, 0));
+    scene.AddObject(model);
+    
     scene.BuildBVH();
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -88,7 +103,7 @@ int main_cpu(int argc, char const *argv[])
             Tint::Surface s;
             Tint::Ray r = cam.GenerateRay(u, v, state);
             if (scene.ClosestIntersection(r, s))
-                img.SetPixel(i, j, glm::vec4(glm::vec3(glm::length(s.hit.point(s.uv) - r.origin)/10), 1));
+                img.SetPixel(i, j, glm::vec4(glm::vec3(glm::length(s.hit.GetPoint(s.uv) - r.origin)/10), 1));
         }        
     }
     end = std::chrono::high_resolution_clock::now();
@@ -112,27 +127,36 @@ int main_opengl(int argc, char const *argv[])
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "Tint", nullptr, nullptr);
     glfwMakeContextCurrent(window);
-    Tint::GLInitialize();
+    Tint::gl::Initialize();
     
     auto end = std::chrono::high_resolution_clock::now();
     std::cout << "Took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms to initialize OpenGL!\n";
 
     begin = std::chrono::high_resolution_clock::now();
 
-    Tint::Camera cam(glm::vec2(WIDTH, HEIGHT), M_PI_2, 2, 0);
+    Tint::Camera cam(glm::vec2(WIDTH, HEIGHT), M_PI_2, 2, 0.3);
     cam.LookAt(glm::vec3(2, 2, 5), glm::vec3(0, 0, 0));
     cam.frame.LockTransform();
 
-    Tint::gl_Camera glcam = cam.ToGLCamera();
-
     Tint::Scene scene;
-    std::vector<Tint::Object> model = Tint::LoadModel("assets/dragon.obj");
-    model[0].frame.Scale(glm::vec3(0.5));
-    scene.AddObjects(model);
-    model = Tint::LoadModel("assets/bunny.obj");
-    model[0].frame.Scale(glm::vec3(0.4));
-    model[0].frame.Translate(glm::vec3(-0.5, 0, 2));
-    scene.AddObjects(model);
+    auto dragon = Tint::Resources::GetModel("assets/dragon.obj");
+    auto cube = Tint::Resources::GetModel("assets/cube.obj");
+
+    Tint::Material mtl;
+    scene.PushMaterial(mtl, "howdy");
+
+    Tint::Object obj({
+            std::make_pair(dragon[0], scene.FetchMaterial("howdy")),
+            std::make_pair(dragon[1], scene.FetchMaterial("howdy"))
+    });
+    scene.AddObject(obj);
+
+    obj = Tint::Object({
+            std::make_pair(cube[0], scene.FetchMaterial("howdy"))
+    });
+    obj.frame.Scale(glm::vec3(0.4));
+    obj.frame.Translate(glm::vec3(1.5, 0, 2));
+    scene.AddObject(obj);
 
     end = std::chrono::high_resolution_clock::now();
     
@@ -145,12 +169,12 @@ int main_opengl(int argc, char const *argv[])
     Tint::Texture bvh_texture(Tint::Texture::Kind::Buffer, Tint::Image::Format::RGBA32F); 
     Tint::Texture tri_texture(Tint::Texture::Kind::Buffer, Tint::Image::Format::RGBA32F);
 
-    bvh_buffer.Allocate(v_bvh.size() * sizeof(Tint::gl_BVHNode), Tint::Buffer::BufferType::TBO);
-    bvh_buffer.Store(v_bvh.data(), v_bvh.size() * sizeof(Tint::gl_BVHNode), 0);
+    bvh_buffer.Allocate(v_bvh.size() * sizeof(Tint::gl::BVHNode), Tint::Buffer::BufferType::TBO);
+    bvh_buffer.Store(v_bvh.data(), v_bvh.size() * sizeof(Tint::gl::BVHNode), 0);
     bvh_buffer.Attach(bvh_texture);
 
-    tri_buffer.Allocate(v_tri.size() * sizeof(Tint::gl_Triangle), Tint::Buffer::BufferType::TBO);
-    tri_buffer.Store(v_tri.data(), v_tri.size() * sizeof(Tint::gl_Triangle), 0);
+    tri_buffer.Allocate(v_tri.size() * sizeof(Tint::gl::Triangle), Tint::Buffer::BufferType::TBO);
+    tri_buffer.Store(v_tri.data(), v_tri.size() * sizeof(Tint::gl::Triangle), 0);
     tri_buffer.Attach(tri_texture);
 
     std::cout << "Took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms to setup the scene!\n";
@@ -160,6 +184,8 @@ int main_opengl(int argc, char const *argv[])
     Tint::Shader shader({std::make_pair("assets/shaders/main.glsl", Tint::Shader::ShaderType::COMPUTE)});
     shader.Compile();
     shader.Use();
+
+    Tint::gl::Camera glcam = cam.ToGLCamera();
     shader.SetFloat("camera.position", glcam.position);
     shader.SetFloat("camera.fwd", glcam.fwd);
     shader.SetFloat("camera.up", glcam.up);

@@ -12,7 +12,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #ifdef TINGE_DEBUG
-#define GL_CALL(f) { f; Tint::GLCheckErrors(__FILE__, __LINE__); }
+#define GL_CALL(f) { f; Tint::gl::CheckErrors(__FILE__, __LINE__); }
 #else
 #define GL_CALL(f) { f; }
 #endif
@@ -29,10 +29,13 @@ namespace Tint
 
     typedef struct complex { real re, img; } complex;
 
-    void GLInitialize();
-
-    void GLCheckErrors(const char* file, int line);
+    namespace gl
+    {
+        void Initialize();
     
+        void CheckErrors(const char* file, int line);
+    } // namespace gl
+        
     void TDebugMessage(const std::string& message);
 
     void TRaiseError(const std::string& message, const std::string& raiser);

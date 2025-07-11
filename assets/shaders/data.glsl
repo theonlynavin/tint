@@ -18,6 +18,9 @@ struct Triangle {
     vec3 n0;
     vec3 n1;  
     vec3 n2;  
+    vec2 t0;  
+    vec2 t1;  
+    vec2 t2;
     int material_id;
 };
 
@@ -32,11 +35,13 @@ BVHNode fetch_bvh_node(int index) {
 
 Triangle fetch_triangle(int index) {
     Triangle tri;
-    vec4 v0 = texelFetch(trianglesTex, index * 5 + 0);
-    vec4 v1 = texelFetch(trianglesTex, index * 5 + 1);
-    vec4 v2 = texelFetch(trianglesTex, index * 5 + 2);
-    vec4 n1 = texelFetch(trianglesTex, index * 5 + 3);
-    vec4 n2 = texelFetch(trianglesTex, index * 5 + 4);
+    vec4 v0 = texelFetch(trianglesTex, index * 7 + 0);
+    vec4 v1 = texelFetch(trianglesTex, index * 7 + 1);
+    vec4 v2 = texelFetch(trianglesTex, index * 7 + 2);
+    vec4 n1 = texelFetch(trianglesTex, index * 7 + 3);
+    vec4 n2 = texelFetch(trianglesTex, index * 7 + 4);
+    vec4 t0 = texelFetch(trianglesTex, index * 7 + 5);
+    vec4 t1 = texelFetch(trianglesTex, index * 7 + 6);
     tri.v0 = v0.xyz;
     tri.v1 = v1.xyz;
     tri.v2 = v2.xyz;
@@ -44,6 +49,9 @@ Triangle fetch_triangle(int index) {
     tri.n1 = n1.xyz;
     tri.n2 = n2.xyz;
     tri.material_id = int(n2.w);
+    tri.t0 = t0.xy;
+    tri.t1 = t0.zw;
+    tri.t2 = t1.xy;
     return tri;
 }
 

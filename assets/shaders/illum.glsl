@@ -12,20 +12,20 @@ vec3 get_illum(Camera camera, vec2 uv, inout uint rng_state) {
     vec3 color = vec3(0.0);       // Accumulated color
     vec3 throughput = vec3(1.0);    // Energy carried by the ray (starts at full brightness)
 
-    for(int bounce = 0; bounce < 4; bounce++) {
+    for(int bounce = 0; bounce < 12; bounce++) {
         // Intersect the scene
         Surface hit = intersect_scene(ray);
 
         // If no hit, return sky color (or background)
         if(hit.tri_index == -1) {
-            vec3 skyColor = mix(vec3(1, 1, 1), vec3(0.5, 0.7, 0.9), uv.y);  // Light blue sky
+            vec3 skyColor = vec3(0);// mix(vec3(1, 1, 1), vec3(0.5, 0.7, 0.9), uv.y);  // Light blue sky
             color += throughput * skyColor;
             break;
         }
 
         // Fetch material properties (albedo, emission, etc.)
-        vec3 albedo = vec3(0.8); 
-        vec3 emission = vec3(0.1);
+        vec3 albedo = vec3(0.3, 0.4, 0.5); 
+        vec3 emission = vec3(0.5, 0.2, 0.3);
 
         color += throughput * emission;
         throughput *= albedo;
