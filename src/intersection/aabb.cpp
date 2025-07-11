@@ -1,6 +1,6 @@
 #include "aabb.hpp"
 #include "triangle.hpp"
-#include "../camera/ray.hpp"
+#include "ray.hpp"
 
 Tint::AABB::AABB(const std::vector<Triangle> &triangles)
     : min(INFINITY), max(-INFINITY)

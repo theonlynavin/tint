@@ -23,10 +23,10 @@ Tint::BVH::BVH(const std::vector<Triangle> &tris)
 Tint::BVH::~BVH()
 {
     if (root != nullptr)
-    delete root;
+        delete root;
 }
 
-std::vector<Tint::gl_BVHNode> Tint::BVH::ToGLBVH() const
+std::vector<Tint::gl::BVHNode> Tint::BVH::ToGLBVH() const
 {
     struct StackEntry {
         BVHNode* node;
@@ -34,7 +34,7 @@ std::vector<Tint::gl_BVHNode> Tint::BVH::ToGLBVH() const
         bool isFirst;
     };
 
-    std::vector<gl_BVHNode> out;
+    std::vector<gl::BVHNode> out;
     std::stack<StackEntry> stack;
 
     stack.push({ root, -1, false });
@@ -46,8 +46,8 @@ std::vector<Tint::gl_BVHNode> Tint::BVH::ToGLBVH() const
         if (!node) continue;
 
         int index = out.size();
-        out.push_back(gl_BVHNode{});
-        gl_BVHNode& linear = out[index];
+        out.push_back(gl::BVHNode{});
+        gl::BVHNode& linear = out[index];
         linear.aabb_max = glm::vec4(node->bounds.GetMax(), 0);
         linear.aabb_min = glm::vec4(node->bounds.GetMin(), 0);
         
@@ -72,7 +72,7 @@ std::vector<Tint::gl_BVHNode> Tint::BVH::ToGLBVH() const
     return out;
 }
 
-Tint::BVHNode *Tint::BVH::GetRoot() const
+Tint::BVH::BVHNode *Tint::BVH::GetRoot() const
 {
     return root;
 }
@@ -105,7 +105,7 @@ bool Tint::BVH::Traverse(Ray &ray, Surface &surf) const
                 {
                     const Triangle &tri = orderedTriangles[i];
                     glm::vec2 uv;
-                    if (tri.intersect(ray, uv))
+                    if (tri.Intersect(ray, uv))
                     {
                         hitTriangle = true;
                         surf.hit = tri;
@@ -180,7 +180,7 @@ bool Tint::BVH::Traverse(Ray &ray, Surface &surf) const
     }
 }
 
-Tint::BVHNode *Tint::BVH::Build(std::vector<BVHLeaf> &leaves, const std::vector<Triangle> &tris, uint first, uint last, int depth)
+Tint::BVH::BVHNode *Tint::BVH::Build(std::vector<BVHLeaf> &leaves, const std::vector<Triangle> &tris, uint first, uint last, int depth)
 {
     AABB bounds;
     for (size_t i = first; i < last; i++)
@@ -355,7 +355,7 @@ bool Tint::BVH::ComputeSplitAxis(std::vector<BVHLeaf> &leaves, uint first, uint 
     return (size != vec3(0, 0, 0));
 }
 
-Tint::BVHNode::~BVHNode()
+Tint::BVH::BVHNode::~BVHNode()
 {
     if (children[0] != nullptr)
         delete children[0];
@@ -363,7 +363,7 @@ Tint::BVHNode::~BVHNode()
         delete children[1];
 }
 
-Tint::BVHNode *Tint::BVHNode::CreateBranch(int splitAxis, BVHNode *first, BVHNode *second, const AABB &bounds)
+Tint::BVH::BVHNode *Tint::BVH::BVHNode::CreateBranch(int splitAxis, BVHNode *first, BVHNode *second, const AABB &bounds)
 {
     BVHNode *node = new BVHNode;
     node->bounds = bounds;
@@ -374,7 +374,7 @@ Tint::BVHNode *Tint::BVHNode::CreateBranch(int splitAxis, BVHNode *first, BVHNod
     return node;
 }
 
-Tint::BVHNode *Tint::BVHNode::CreateLeaf(int offset, int numTris, const AABB &bounds)
+Tint::BVH::BVHNode *Tint::BVH::BVHNode::CreateLeaf(int offset, int numTris, const AABB &bounds)
 {
     BVHNode *node = new BVHNode;
     node->bounds = bounds;

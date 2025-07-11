@@ -17,9 +17,11 @@ namespace Tint
         glm::vec3 direction;
 
         float tMin = FLT_EPSILON, tMax = FLT_MAX;
-        //float wavelength;
 
+        /// @brief Returns the point a distance t along the ray from the origin
         inline glm::vec3 at(float t) const { return origin + t * direction; }
+
+        /// @brief Returns the point a distance t along the ray from the origin
         inline glm::vec3 operator()(float t) const { return origin + t * direction; } 
     };  
     
